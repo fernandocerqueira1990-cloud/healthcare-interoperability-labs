@@ -151,3 +151,42 @@ Ele é especialmente útil como uma etapa de transição: mantém a compatibilid
 ## Evidências sugeridas
 
 Consulte o [mapa de evidências](evidence.md) para relacionar os prints do laboratório a cada resultado técnico.
+
+
+## Evidências do laboratório
+
+### Modelo de dados da Cloud Healthcare API
+
+![Modelo de dados da Cloud Healthcare API](../assets/evidence/hl7v2-00-cloud-healthcare-data-model.png)
+
+O diagrama apresenta o papel do dataset como contêiner dos repositórios HL7v2, DICOM e FHIR.
+
+### IAM do service agent
+
+![Funções atribuídas ao service agent](../assets/evidence/hl7v2-05-iam-service-agent-roles.png)
+
+Permissões atribuídas para viabilizar a interação entre Healthcare API, Pub/Sub, Storage e BigQuery no ambiente de laboratório.
+
+### Dataset e HL7v2 Store
+
+![Dataset dataset1 e HL7v2 Store](../assets/evidence/hl7v2-06-dataset-and-store.png)
+
+O dataset `dataset1`, na região `us-east4`, contém o repositório `hl7v2store1` associado ao tópico Pub/Sub.
+
+### Adaptador MLLP em execução
+
+![Configuração do MLLP Adapter](../assets/evidence/hl7v2-02-mllp-adapter-configuration.png)
+
+Parâmetros de execução do adaptador, conectando a porta local MLLP ao HL7v2 Store da Healthcare API.
+
+### Troubleshooting do payload
+
+![Diagnóstico do redirecionamento HTTP](../assets/evidence/hl7v2-04-redirect-troubleshooting.png)
+
+Identificação de que o download inicial retornou HTML de redirecionamento, explicando o erro `Invalid MSH header`. A correção usou `curl -L`.
+
+### Confirmação de persistência
+
+![Logs de envio bem-sucedido e consulta via API](../assets/evidence/hl7v2-03-adapter-success-and-api-validation.png)
+
+Logs confirmam o envio e a recuperação bem-sucedidos da mensagem; a consulta REST retorna `hl7V2Messages`, comprovando a persistência no repositório.
