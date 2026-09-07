@@ -5,8 +5,8 @@
 ```mermaid
 flowchart LR
     A["HL7v2 + MLLP"] --> B["HL7v2 → FHIR"]
-    B --> C["FHIR direto"]
-    C --> D["DICOM"]
+    B --> C["DICOM"]
+    C --> D["FHIR direto"]
 ```
 
 | Etapa | Status | Resultado |
@@ -14,7 +14,7 @@ flowchart LR
 | Ingesting HL7v2 Data with the Healthcare API | Concluída | Mensagem HL7v2 recebida por MLLP e persistida no HL7v2 Store |
 | Streaming HL7 to FHIR Data with Healthcare API | Concluída | Dados HL7v2 convertidos em FHIR e disponibilizados no BigQuery |
 | Ingesting FHIR Data with the Healthcare API | Próxima | Criar, importar, consultar e gerenciar recursos FHIR diretamente |
-| Ingesting DICOM Data with the Healthcare API | Próxima | Ingerir e organizar imagens médicas no DICOM Store |
+| Ingesting DICOM Data with the Healthcare API | Concluída | Estudos importados no DICOM Store, metadados exportados e consultados no BigQuery |
 
 ## Próximo laboratório: FHIR
 
@@ -30,18 +30,17 @@ Pontos esperados de aprendizado:
 - diferenças entre integração baseada em mensagens e integração baseada em recursos;
 - noções de busca, versionamento e validação.
 
-## Depois: DICOM
+## DICOM concluído
 
-O estudo de DICOM completa a terceira modalidade principal da Healthcare API.
+O laboratório de DICOM completou a terceira modalidade principal da Healthcare API.
 
-Pontos esperados de aprendizado:
+Resultados registrados:
 
-- DICOM Store;
-- estudos, séries e instâncias;
-- integração com PACS/RIS;
-- DICOMweb;
-- gestão de imagens médicas na nuvem;
-- possibilidades de desidentificação para pesquisa.
+- DICOM Store criado e estudos públicos importados;
+- segundo store provisionado por REST autenticada;
+- metadados exportados e consultados no BigQuery;
+- troubleshooting de IAM e dataset documentado;
+- relação com PACS/RIS registrada em [Lab 03](03-ingesting-dicom.md).
 
 ## Competência resultante
 

@@ -2,7 +2,7 @@
 
 Documentação técnica de laboratórios práticos com a **Google Cloud Healthcare API**, voltados à interoperabilidade de dados em saúde.
 
-O repositório registra, de forma reproduzível e orientada a portfólio, a evolução de uma arquitetura que recebe mensagens clínicas legadas em **HL7v2**, estrutura dados no padrão **FHIR** e os disponibiliza para integração e análise.
+O repositório registra, de forma reproduzível e orientada a portfólio, a evolução de uma arquitetura que recebe mensagens clínicas legadas em **HL7v2**, estrutura dados no padrão **FHIR** e integra metadados de imagem médica em **DICOM** para análise.
 
 > Os laboratórios foram executados em ambientes temporários de treinamento. As mensagens utilizadas são de demonstração; nenhum dado real de paciente é armazenado neste repositório.
 
@@ -10,10 +10,11 @@ O repositório registra, de forma reproduzível e orientada a portfólio, a evol
 
 Demonstrar conhecimento prático em integração de sistemas de saúde, mensageria, APIs, dados clínicos e serviços gerenciados do Google Cloud.
 
-A trilha conecta dois níveis de implementação:
+A trilha conecta três níveis de implementação:
 
 1. **Ingestão HL7v2:** recebimento seguro de mensagens clínicas por MLLP e persistência na Healthcare API.
 2. **Streaming HL7v2 para FHIR:** transformação de dados clínicos em recursos FHIR e entrega para consumo analítico no BigQuery.
+3. **Ingestão DICOM:** importação de imagens médicas, exportação de metadados e consultas analíticas no BigQuery.
 
 ## Arquitetura consolidada
 
@@ -26,6 +27,9 @@ flowchart TD
     E --> F["Dataflow + mapeamento"]
     F --> G["FHIR Store"]
     G --> H["BigQuery"]
+    A --> J["DICOM / DICOMweb"]
+    J --> K["Cloud Healthcare API\nDICOM Store"]
+    K --> H
     H --> I["Analytics, BI e IA"]
 ```
 
@@ -37,7 +41,8 @@ Leia a explicação detalhada em [Arquitetura](docs/architecture.md).
 |---|---|---|
 | Concluído | [Ingesting HL7v2 Data with the Healthcare API](docs/01-ingesting-hl7v2.md) | Receber e armazenar mensagens HL7v2 via MLLP |
 | Concluído | [Streaming HL7 to FHIR Data with Healthcare API](docs/02-streaming-hl7v2-to-fhir.md) | Transformar dados HL7v2 em FHIR e disponibilizá-los no BigQuery |
-| Próximo | [Roadmap](docs/roadmap.md) | Ingestão direta de FHIR e DICOM |
+| Concluído | [Ingesting DICOM Data with the Healthcare API](docs/03-ingesting-dicom.md) | Importar estudos DICOM e exportar metadados para análise no BigQuery |
+| Próximo | [Roadmap](docs/roadmap.md) | Ingestão direta de FHIR e evolução para uma plataforma de referência |
 
 ## Evidências e documentação
 
@@ -48,7 +53,7 @@ Leia a explicação detalhada em [Arquitetura](docs/architecture.md).
 ## Competências praticadas
 
 - Google Cloud Healthcare API
-- HL7v2, MLLP e FHIR
+- HL7v2, MLLP, FHIR e DICOM/DICOMweb
 - Cloud Pub/Sub e Dataflow
 - BigQuery e dados clínicos
 - GKE, containers Docker e Kubernetes

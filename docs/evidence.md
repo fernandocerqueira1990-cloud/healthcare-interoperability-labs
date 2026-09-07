@@ -55,7 +55,8 @@ Para uma leitura rápida no GitHub ou LinkedIn, use esta sequência:
 2. execução do MLLP Adapter e a confirmação `MSA|AA|`;
 3. pipeline/Dataflow ou pods em execução;
 4. recurso `Patient` no FHIR Viewer;
-5. resultado no BigQuery.
+5. fluxo DICOM Store → BigQuery;
+6. resultado no BigQuery.
 
 Assim, a narrativa fica clara: **mensagem recebida → processada → estruturada → analisável**.
 
@@ -66,3 +67,30 @@ Assim, a narrativa fica clara: **mensagem recebida → processada → estruturad
 - **Logs:** “Adaptador MLLP recebendo e enviando a mensagem ao HL7v2 Store.”
 - **FHIR:** “Recurso Patient gerado a partir do fluxo de integração.”
 - **BigQuery:** “Dados clínicos estruturados disponíveis para consulta analítica.”
+- **DICOM Store:** “Imagens médicas ingeridas no Cloud Healthcare API e preparadas para consulta por DICOMweb.”
+- **DICOM → BigQuery:** “Metadados de estudos de imagem disponibilizados para análise sem acessar os arquivos DICOM diretamente.”
+- **Troubleshooting DICOM:** “Retorno da API analisado para corrigir permissões do service agent e a dependência do dataset analítico.”
+
+## Evidências do Lab 03 — Ingesting DICOM Data
+
+| Evidência | O que comprova | Valor para o portfólio |
+|---|---|---|
+| IAM do Cloud Healthcare Service Agent | Permissões para Healthcare API, Storage e BigQuery | Demonstra governança de acesso entre serviços gerenciados |
+| Criação dos DICOM Stores e importação | Provisionamento por CLI/REST e ingestão de arquivos `.dcm` | Mostra operação prática de PACS/RIS em cloud |
+| Retorno `400` e correção | Diagnóstico de IAM e dataset ausente | Evidencia troubleshooting orientado ao retorno da API |
+| Dataset BigQuery e operação de exportação | Camada analítica criada e exportação assíncrona iniciada | Conecta imagem médica a dados estruturados |
+| Consulta por `PatientID` | Metadados DICOM consultáveis em SQL | Valida o fluxo ponta a ponta |
+| Consulta `No Finding` | Segmentação analítica e interpretação semântica | Demonstra cuidado com significado clínico dos campos |
+
+### Organização adotada
+
+```text
+assets/
+└── evidence/
+    ├── dicom-01-iam-service-agent.png
+    ├── dicom-02-store-provisioning-and-import.png
+    ├── dicom-03-export-permission-troubleshooting.png
+    ├── dicom-04-bigquery-dataset-and-export-success.png
+    ├── dicom-05-bigquery-study-query.png
+    └── dicom-06-bigquery-no-finding-query.png
+```

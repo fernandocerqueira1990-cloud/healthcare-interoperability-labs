@@ -4,7 +4,7 @@
 
 A arquitetura documentada neste repositório demonstra como integrar dados clínicos provenientes de sistemas hospitalares tradicionais a uma plataforma cloud orientada a padrões.
 
-O ponto de partida é o **HL7v2**, formato ainda muito presente em HIS, LIS, RIS e sistemas de prontuário. O destino é o **FHIR**, padrão baseado em recursos e APIs REST, mais adequado para integrações modernas, aplicações digitais e consumo analítico.
+Uma das trilhas parte do **HL7v2**, formato ainda muito presente em HIS, LIS, RIS e sistemas de prontuário, até o **FHIR**, padrão baseado em recursos e APIs REST. A outra trata imagens no padrão **DICOM**, conectando PACS/RIS à camada analítica por meio da exportação de metadados.
 
 ```mermaid
 flowchart TD
@@ -15,6 +15,9 @@ flowchart TD
     E --> F["Dataflow<br/>transformação e mapeamento"]
     F --> G["FHIR Store<br/>recursos clínicos"]
     G --> H["BigQuery<br/>consulta e análise"]
+    J["PACS / RIS"] --> K["DICOM / DICOMweb"]
+    K --> L["Cloud Healthcare API<br/>DICOM Store"]
+    L --> H
     H --> I["BI, indicadores e IA"]
 ```
 
@@ -29,6 +32,7 @@ flowchart TD
 | Pub/Sub | Publica notificações de novas mensagens | Desacopla a ingestão dos consumidores posteriores |
 | Dataflow | Processa streaming e aplica mapeamentos | Escala o processamento sem operação manual de servidores |
 | FHIR Store | Armazena recursos clínicos estruturados | Expõe dados com um padrão de interoperabilidade moderno |
+| DICOM Store | Armazena estudos, séries e instâncias de imagem médica | Centraliza imagens e expõe operações compatíveis com DICOMweb |
 | BigQuery | Permite análise de dados estruturados | Acelera BI, indicadores e exploração de dados |
 
 ## Fluxo lógico
@@ -40,6 +44,8 @@ flowchart TD
 5. Um pipeline de Dataflow consome o evento, interpreta os segmentos HL7v2 e mapeia seus dados.
 6. O resultado é persistido como recursos FHIR, como `Patient`, `Encounter` ou `Observation`.
 7. A camada analítica consulta dados no BigQuery para dashboards, auditoria ou aplicações de IA.
+
+Em paralelo, um PACS/RIS pode enviar estudos DICOM ao DICOM Store. Os arquivos permanecem no repositório de imagem, enquanto os metadados são exportados ao BigQuery para pesquisa, indicadores e análises sem leitura direta dos objetos binários.
 
 ## Da demonstração ao ambiente produtivo
 
