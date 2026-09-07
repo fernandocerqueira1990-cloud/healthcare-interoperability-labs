@@ -13,22 +13,21 @@ flowchart LR
 |---|---|---|
 | Ingesting HL7v2 Data with the Healthcare API | Concluída | Mensagem HL7v2 recebida por MLLP e persistida no HL7v2 Store |
 | Streaming HL7 to FHIR Data with Healthcare API | Concluída | Dados HL7v2 convertidos em FHIR e disponibilizados no BigQuery |
-| Ingesting FHIR Data with the Healthcare API | Próxima | Criar, importar, consultar e gerenciar recursos FHIR diretamente |
+| Ingesting FHIR Data with the Healthcare API | Concluída | Recursos FHIR R4 importados, desidentificados, exportados e transmitidos ao BigQuery |
 | Ingesting DICOM Data with the Healthcare API | Concluída | Estudos importados no DICOM Store, metadados exportados e consultados no BigQuery |
 
-## Próximo laboratório: FHIR
+## FHIR direto concluído
 
-A prioridade é praticar a ingestão direta de FHIR.
+O laboratório complementou a conversão HL7v2 → FHIR ao demonstrar o fluxo em que aplicações produzem e consomem recursos FHIR diretamente pela API REST.
 
-Isso complementa o lab de streaming ao mostrar o caminho em que uma aplicação já produz ou consome recursos FHIR via API REST, sem depender de uma mensagem HL7v2 na origem.
+Resultados registrados:
 
-Pontos esperados de aprendizado:
-
-- estrutura de recursos como `Patient`, `Observation`, `Encounter` e `MedicationRequest`;
-- criação e consulta via API REST;
-- organização de dados clínicos em FHIR Store;
-- diferenças entre integração baseada em mensagens e integração baseada em recursos;
-- noções de busca, versionamento e validação.
+- FHIR Stores R4 principal e desidentificado criados;
+- recursos importados do Cloud Storage;
+- exportação em massa e streaming contínuo para BigQuery;
+- recursos `Patient` criados por API REST;
+- desidentificação validada em uma camada analítica separada;
+- relação completa registrada em [Lab 04](04-ingesting-fhir.md).
 
 ## DICOM concluído
 

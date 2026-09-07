@@ -56,7 +56,8 @@ Para uma leitura rápida no GitHub ou LinkedIn, use esta sequência:
 3. pipeline/Dataflow ou pods em execução;
 4. recurso `Patient` no FHIR Viewer;
 5. fluxo DICOM Store → BigQuery;
-6. resultado no BigQuery.
+6. recurso FHIR original e sua versão desidentificada;
+7. resultado no BigQuery.
 
 Assim, a narrativa fica clara: **mensagem recebida → processada → estruturada → analisável**.
 
@@ -70,6 +71,32 @@ Assim, a narrativa fica clara: **mensagem recebida → processada → estruturad
 - **DICOM Store:** “Imagens médicas ingeridas no Cloud Healthcare API e preparadas para consulta por DICOMweb.”
 - **DICOM → BigQuery:** “Metadados de estudos de imagem disponibilizados para análise sem acessar os arquivos DICOM diretamente.”
 - **Troubleshooting DICOM:** “Retorno da API analisado para corrigir permissões do service agent e a dependência do dataset analítico.”
+
+## Evidências do Lab 04 — Ingesting FHIR Data
+
+| Evidência | O que comprova | Valor para o portfólio |
+|---|---|---|
+| Datasets BigQuery criados | Separação de camadas analíticas original e desidentificada | Demonstra preparação de dados para governança e analytics |
+| FHIR Stores R4 e tópico Pub/Sub | Recursos de interoperabilidade e notificação configurados | Mostra arquitetura orientada a eventos |
+| Importação FHIR | Recursos carregados do Cloud Storage | Demonstra carga em massa de dados padronizados |
+| Consultas original e desidentificada | Transformação de atributos pessoais validada em SQL | Demonstra privacidade e governança aplicadas a dados clínicos |
+| `PATCH` de `streamConfigs` | Configuração de exportação contínua para BigQuery | Mostra administração da API e integração em tempo próximo do real |
+| `POST` de Patient e consulta posterior | Recurso criado por API e refletido na camada analítica | Valida o fluxo ponta a ponta FHIR → BigQuery |
+
+### Organização adotada
+
+```text
+assets/
+└── evidence/
+    ├── fhir-01-project-and-bigquery-datasets.png
+    ├── fhir-02-stores-r4-and-pubsub.png
+    ├── fhir-03-import-resources-success.png
+    ├── fhir-04-original-patient-query.png
+    ├── fhir-05-deidentified-patient-query.png
+    ├── fhir-06-streaming-configuration.png
+    ├── fhir-07-patient-rest-create.png
+    └── fhir-08-streaming-patient-query.png
+```
 
 ## Evidências do Lab 03 — Ingesting DICOM Data
 

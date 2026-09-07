@@ -10,11 +10,12 @@ O repositório registra, de forma reproduzível e orientada a portfólio, a evol
 
 Demonstrar conhecimento prático em integração de sistemas de saúde, mensageria, APIs, dados clínicos e serviços gerenciados do Google Cloud.
 
-A trilha conecta três níveis de implementação:
+A trilha conecta quatro níveis de implementação:
 
 1. **Ingestão HL7v2:** recebimento seguro de mensagens clínicas por MLLP e persistência na Healthcare API.
 2. **Streaming HL7v2 para FHIR:** transformação de dados clínicos em recursos FHIR e entrega para consumo analítico no BigQuery.
 3. **Ingestão DICOM:** importação de imagens médicas, exportação de metadados e consultas analíticas no BigQuery.
+4. **Ingestão direta de FHIR:** importação, desidentificação, exportação e streaming de recursos FHIR R4.
 
 ## Arquitetura consolidada
 
@@ -27,6 +28,9 @@ flowchart TD
     E --> F["Dataflow + mapeamento"]
     F --> G["FHIR Store"]
     G --> H["BigQuery"]
+    J["Apps / EHR modernos"] --> G
+    G --> M["FHIR Store\ndesidentificado"]
+    M --> H
     A --> J["DICOM / DICOMweb"]
     J --> K["Cloud Healthcare API\nDICOM Store"]
     K --> H
@@ -42,7 +46,8 @@ Leia a explicação detalhada em [Arquitetura](docs/architecture.md).
 | Concluído | [Ingesting HL7v2 Data with the Healthcare API](docs/01-ingesting-hl7v2.md) | Receber e armazenar mensagens HL7v2 via MLLP |
 | Concluído | [Streaming HL7 to FHIR Data with Healthcare API](docs/02-streaming-hl7v2-to-fhir.md) | Transformar dados HL7v2 em FHIR e disponibilizá-los no BigQuery |
 | Concluído | [Ingesting DICOM Data with the Healthcare API](docs/03-ingesting-dicom.md) | Importar estudos DICOM e exportar metadados para análise no BigQuery |
-| Próximo | [Roadmap](docs/roadmap.md) | Ingestão direta de FHIR e evolução para uma plataforma de referência |
+| Concluído | [Ingesting FHIR Data with the Healthcare API](docs/04-ingesting-fhir.md) | Importar, desidentificar e transmitir recursos FHIR R4 para o BigQuery |
+| Próximo | [Roadmap](docs/roadmap.md) | Evolução para uma plataforma de referência de interoperabilidade |
 
 ## Evidências e documentação
 
@@ -59,6 +64,7 @@ Leia a explicação detalhada em [Arquitetura](docs/architecture.md).
 - GKE, containers Docker e Kubernetes
 - IAM e contas de serviço
 - APIs REST, `curl` e `gcloud`
+- Desidentificação de dados FHIR e streaming para BigQuery
 - Arquitetura de integração hospitalar
 - Troubleshooting de payloads e redirecionamentos HTTP
 

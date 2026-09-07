@@ -32,6 +32,7 @@ flowchart TD
 | Pub/Sub | Publica notificações de novas mensagens | Desacopla a ingestão dos consumidores posteriores |
 | Dataflow | Processa streaming e aplica mapeamentos | Escala o processamento sem operação manual de servidores |
 | FHIR Store | Armazena recursos clínicos estruturados | Expõe dados com um padrão de interoperabilidade moderno |
+| FHIR Store desidentificado | Armazena recursos sem atributos pessoais selecionados | Permite análises e pesquisa com menor exposição de dados pessoais |
 | DICOM Store | Armazena estudos, séries e instâncias de imagem médica | Centraliza imagens e expõe operações compatíveis com DICOMweb |
 | BigQuery | Permite análise de dados estruturados | Acelera BI, indicadores e exploração de dados |
 
@@ -46,6 +47,8 @@ flowchart TD
 7. A camada analítica consulta dados no BigQuery para dashboards, auditoria ou aplicações de IA.
 
 Em paralelo, um PACS/RIS pode enviar estudos DICOM ao DICOM Store. Os arquivos permanecem no repositório de imagem, enquanto os metadados são exportados ao BigQuery para pesquisa, indicadores e análises sem leitura direta dos objetos binários.
+
+Aplicações modernas também podem criar ou atualizar recursos diretamente no FHIR Store via REST. Com `streamConfigs`, as alterações podem ser entregues continuamente ao BigQuery. Quando o uso analítico exigir minimização de dados, o FHIR Store pode gerar uma cópia desidentificada em um store separado antes da exportação.
 
 ## Da demonstração ao ambiente produtivo
 
