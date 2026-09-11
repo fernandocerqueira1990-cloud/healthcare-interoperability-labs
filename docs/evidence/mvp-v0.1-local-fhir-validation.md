@@ -97,15 +97,53 @@ No navegador, o servidor respondeu com:
 HTTP 200 OK
 ```
 
-## O que esta validação comprova
+## Validação 5 — Criação de Patient sintético
 
-A resposta `CapabilityStatement` confirma que:
+Foi executado um `POST /fhir/Patient` utilizando um recurso FHIR sintético.
+
+Resultado observado:
+
+```text
+HTTP/1.1 201
+```
+
+O HAPI FHIR retornou o recurso persistido com:
+
+```text
+resourceType: Patient
+id: 1000
+versionId: 1
+```
+
+Também foi retornado o cabeçalho:
+
+```text
+Location: http://localhost:8080/fhir/Patient/1000/_history/1
+```
+
+### Interpretação
+
+O código HTTP `201` confirma que o recurso foi criado com sucesso.
+
+O `id` `1000` é o identificador lógico atribuído pelo servidor FHIR ao recurso.
+
+O `versionId` `1` indica a primeira versão persistida desse recurso.
+
+O cabeçalho `Location` aponta para a versão recém-criada no histórico do recurso.
+
+Conclusão: o HAPI FHIR recebeu, validou e persistiu com sucesso um recurso `Patient` FHIR R4 no PostgreSQL.
+
+## O que estas validações comprovam
+
+As validações realizadas até aqui confirmam que:
 
 - a aplicação está acessível via HTTP;
 - o endpoint base FHIR está ativo;
 - o servidor está operando em FHIR R4;
 - a versão declarada é FHIR `4.0.1`;
-- a API REST está pronta para receber operações FHIR.
+- a API REST aceita operações de criação;
+- um recurso `Patient` válido pode ser persistido;
+- o HAPI FHIR está integrado ao PostgreSQL.
 
 ## Status da etapa
 
@@ -113,13 +151,13 @@ A resposta `CapabilityStatement` confirma que:
 [x] PostgreSQL saudável
 [x] HAPI FHIR em execução
 [x] /fhir/metadata respondendo
-[ ] Patient sintético criado
+[x] Patient sintético criado
 [ ] Patient recuperado via busca
 [ ] Persistência após reinício
 ```
 
 ## Próximo teste
 
-Criar um recurso `Patient` sintético por meio de um `POST /fhir/Patient` e validar o retorno HTTP `201 Created`.
+Pesquisar o `Patient` pelo identificador hospitalar sintético `123456` e validar que o servidor retorna um `Bundle` contendo o recurso criado.
 
 > Nenhum dado real de paciente foi utilizado nesta validação.
