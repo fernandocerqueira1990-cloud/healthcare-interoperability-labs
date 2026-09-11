@@ -133,6 +133,43 @@ O cabeçalho `Location` aponta para a versão recém-criada no histórico do rec
 
 Conclusão: o HAPI FHIR recebeu, validou e persistiu com sucesso um recurso `Patient` FHIR R4 no PostgreSQL.
 
+## Validação 6 — Busca por identifier
+
+Foi executada a pesquisa:
+
+```bash
+curl -s "http://localhost:8080/fhir/Patient?identifier=123456"
+```
+
+Resultado observado:
+
+```text
+resourceType: Bundle
+type: searchset
+total: 1
+```
+
+Dentro de `entry`, o servidor retornou o recurso:
+
+```text
+Patient/1000
+```
+
+com o identificador sintético:
+
+```text
+system: https://hospital-demo.local/mrn
+value: 123456
+```
+
+### Interpretação
+
+A busca comprova que o recurso criado está indexado e pode ser recuperado por um identificador de negócio, sem depender do `id` interno atribuído pelo servidor FHIR.
+
+Esse comportamento é importante em integrações reais, pois sistemas de origem normalmente conhecem identificadores clínicos ou administrativos, como MRN/prontuário, e não o `id` interno do servidor FHIR.
+
+Conclusão: a operação de busca por `Patient.identifier` funcionou corretamente e retornou exatamente um recurso correspondente.
+
 ## O que estas validações comprovam
 
 As validações realizadas até aqui confirmam que:
@@ -143,7 +180,8 @@ As validações realizadas até aqui confirmam que:
 - a versão declarada é FHIR `4.0.1`;
 - a API REST aceita operações de criação;
 - um recurso `Patient` válido pode ser persistido;
-- o HAPI FHIR está integrado ao PostgreSQL.
+- o HAPI FHIR está integrado ao PostgreSQL;
+- o recurso pode ser localizado por parâmetro de busca FHIR.
 
 ## Status da etapa
 
@@ -152,12 +190,12 @@ As validações realizadas até aqui confirmam que:
 [x] HAPI FHIR em execução
 [x] /fhir/metadata respondendo
 [x] Patient sintético criado
-[ ] Patient recuperado via busca
+[x] Patient recuperado via busca
 [ ] Persistência após reinício
 ```
 
 ## Próximo teste
 
-Pesquisar o `Patient` pelo identificador hospitalar sintético `123456` e validar que o servidor retorna um `Bundle` contendo o recurso criado.
+Parar e recriar os containers sem remover o volume e repetir a busca pelo identificador `123456` para comprovar a persistência dos dados no PostgreSQL.
 
 > Nenhum dado real de paciente foi utilizado nesta validação.
