@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: healthcare-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hapi
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d hapi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - hapi-postgres-data:/var/lib/postgresql/data
+    networks:
+      - healthcare-net
+
+  fhir:
+    image: hapiproject/hapi:v8.10.0-3
+    container_name: healthcare-hapi-fhir
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    configs:
+      - source: hapi_config
+        target: /app/config/application.yaml
+    networks:
+      - healthcare-net
+
+configs:
+  hapi_config:
+    file: ./hapi.application.yaml
+
+volumes:
+  hapi-postgres-data:
+
+networks:
+  healthcare-net:
+    driver: bridge
