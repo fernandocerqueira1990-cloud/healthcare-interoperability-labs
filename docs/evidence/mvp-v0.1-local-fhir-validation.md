@@ -170,9 +170,67 @@ Esse comportamento é importante em integrações reais, pois sistemas de origem
 
 Conclusão: a operação de busca por `Patient.identifier` funcionou corretamente e retornou exatamente um recurso correspondente.
 
+## Validação 7 — Persistência após recriação dos containers
+
+Foram executados os comandos:
+
+```bash
+docker compose down
+docker compose up -d
+```
+
+O comando `down` removeu os containers e a rede, porém o volume do PostgreSQL foi preservado.
+
+Após a recriação dos containers e a conclusão da inicialização do HAPI FHIR, a busca foi repetida:
+
+```bash
+curl -s "http://localhost:8080/fhir/Patient?identifier=123456"
+```
+
+Resultado observado:
+
+```text
+resourceType: Bundle
+type: searchset
+total: 1
+```
+
+O recurso `Patient/1000` continuou disponível, mantendo:
+
+```text
+identifier.value: 123456
+versionId: 1
+```
+
+### Interpretação
+
+Esse resultado comprova que os dados não estavam armazenados apenas no filesystem efêmero do container PostgreSQL.
+
+O recurso permaneceu disponível porque o banco utiliza o volume Docker persistente configurado no `docker-compose.yml`.
+
+Fluxo comprovado:
+
+```text
+Containers removidos
+       |
+       v
+Volume PostgreSQL preservado
+       |
+       v
+Containers recriados
+       |
+       v
+HAPI reconecta ao mesmo banco
+       |
+       v
+Patient continua disponível
+```
+
+Conclusão: a persistência de dados do ambiente FHIR local foi validada com sucesso.
+
 ## O que estas validações comprovam
 
-As validações realizadas até aqui confirmam que:
+As validações realizadas confirmam que:
 
 - a aplicação está acessível via HTTP;
 - o endpoint base FHIR está ativo;
@@ -181,7 +239,9 @@ As validações realizadas até aqui confirmam que:
 - a API REST aceita operações de criação;
 - um recurso `Patient` válido pode ser persistido;
 - o HAPI FHIR está integrado ao PostgreSQL;
-- o recurso pode ser localizado por parâmetro de busca FHIR.
+- o recurso pode ser localizado por parâmetro de busca FHIR;
+- os dados permanecem disponíveis após a recriação dos containers;
+- o volume PostgreSQL está cumprindo sua função de persistência.
 
 ## Status da etapa
 
@@ -191,11 +251,15 @@ As validações realizadas até aqui confirmam que:
 [x] /fhir/metadata respondendo
 [x] Patient sintético criado
 [x] Patient recuperado via busca
-[ ] Persistência após reinício
+[x] Persistência após reinício
 ```
 
-## Próximo teste
+## Conclusão do Milestone 1.1
 
-Parar e recriar os containers sem remover o volume e repetir a busca pelo identificador `123456` para comprovar a persistência dos dados no PostgreSQL.
+O **Milestone 1.1 — Ambiente FHIR Local** foi concluído.
+
+O projeto agora possui um servidor FHIR R4 local, persistente e reproduzível, pronto para receber recursos produzidos pelas próximas etapas do Healthcare Integration Gateway.
+
+O próximo passo é construir o **HIS Simulator** e trabalhar com a primeira mensagem sintética `HL7v2 ADT^A01`, preparando a origem do fluxo que futuramente será recebido via MLLP, interpretado, validado e transformado em FHIR `Patient` e `Encounter`.
 
 > Nenhum dado real de paciente foi utilizado nesta validação.
