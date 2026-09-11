@@ -215,7 +215,65 @@ docker compose logs -f db
 
 ---
 
-## 10. Validação 1 — CapabilityStatement
+## 10. Validação executada — inicialização dos serviços
+
+Em 11/09/2026, o ambiente local foi executado com sucesso em Debian sobre WSL2 utilizando Docker.
+
+O comando:
+
+```bash
+docker compose up -d
+```
+
+criou e iniciou os seguintes componentes:
+
+```text
+healthcare-net
+hapi-postgres-data
+healthcare-postgres
+healthcare-hapi-fhir
+```
+
+A saída de `docker compose ps` confirmou:
+
+```text
+healthcare-postgres   Up (...) (healthy)
+healthcare-hapi-fhir  Up (...)
+```
+
+O PostgreSQL foi inicializado com sucesso e apresentou nos logs:
+
+```text
+database system is ready to accept connections
+```
+
+O HAPI FHIR apresentou nos logs:
+
+```text
+Initializing HAPI FHIR restful server running in R4 mode
+Tomcat started on port 8080 (http)
+Started Application
+```
+
+### O que essa validação comprova?
+
+Esta evidência demonstra que:
+
+- a imagem PostgreSQL foi obtida e executada;
+- a imagem HAPI FHIR foi obtida e executada;
+- a rede Docker foi criada;
+- o volume persistente foi criado;
+- o health check do PostgreSQL está funcionando;
+- o PostgreSQL aceita conexões;
+- o HAPI FHIR inicia somente após a disponibilidade do banco;
+- o HAPI foi iniciado em modo FHIR R4;
+- o servidor HTTP está disponível na porta 8080.
+
+Os avisos de locale exibidos pela imagem Alpine do PostgreSQL não impediram a inicialização nem alteraram o status `healthy` do serviço.
+
+---
+
+## 11. Validação 1 — CapabilityStatement
 
 Quando o HAPI estiver inicializado, acessar:
 
@@ -240,11 +298,11 @@ Esse recurso descreve capacidades como:
 - operações disponíveis;
 - formas de interação REST.
 
-Portanto, obter uma resposta FHIR válida nesse endpoint comprova que o servidor está operacional.
+Portanto, obter uma resposta FHIR válida nesse endpoint comprova que o servidor está operacional no nível da API, e não apenas que o processo Java está em execução.
 
 ---
 
-## 11. Validação 2 — criar um Patient sintético
+## 12. Validação 2 — criar um Patient sintético
 
 Criar um arquivo temporário `patient.json` ou utilizar diretamente a chamada abaixo:
 
@@ -278,7 +336,7 @@ Resposta HTTP de criação bem-sucedida, normalmente `201 Created`, contendo o r
 
 ---
 
-## 12. Validação 3 — consultar o Patient
+## 13. Validação 3 — consultar o Patient
 
 Pesquisar pelo identificador hospitalar:
 
@@ -294,7 +352,7 @@ Resultado esperado:
 
 ---
 
-## 13. Teste de persistência
+## 14. Teste de persistência
 
 Parar os containers:
 
@@ -320,7 +378,7 @@ Se o recurso continuar disponível, validamos que o volume PostgreSQL está pres
 
 ---
 
-## 14. O que esta etapa comprova
+## 15. O que esta etapa comprova
 
 Ao concluir esta etapa teremos comprovado:
 
@@ -334,7 +392,7 @@ Ao concluir esta etapa teremos comprovado:
 
 ---
 
-## 15. Evidências recomendadas
+## 16. Evidências recomendadas
 
 Salvar evidências sem dados reais de pacientes.
 
@@ -346,7 +404,7 @@ Sugestões:
 4. busca do Patient pelo identificador sintético;
 5. consulta realizada novamente após reiniciar os containers.
 
-As imagens poderão ser armazenadas futuramente em:
+As imagens poderão ser armazenadas em:
 
 ```text
 assets/evidence/mvp-v0.1/local-fhir/
@@ -354,7 +412,7 @@ assets/evidence/mvp-v0.1/local-fhir/
 
 ---
 
-## 16. Troubleshooting inicial
+## 17. Troubleshooting inicial
 
 ### Porta 8080 ocupada
 
@@ -405,7 +463,7 @@ O parâmetro `-v` remove volumes e é apropriado apenas quando desejamos resetar
 
 ---
 
-## 17. Segurança
+## 18. Segurança
 
 As credenciais `admin/admin` existem apenas para desenvolvimento local.
 
@@ -417,16 +475,14 @@ Nenhum dado real de paciente deve ser utilizado neste ambiente público.
 
 ---
 
-## 18. Critério de conclusão
+## 19. Critério de conclusão
 
-A etapa estará concluída quando os seguintes testes forem realizados com sucesso:
-
-- [ ] PostgreSQL saudável.
-- [ ] HAPI FHIR em execução.
+- [x] PostgreSQL saudável.
+- [x] HAPI FHIR em execução.
 - [ ] `/fhir/metadata` respondendo.
 - [ ] Patient sintético criado.
 - [ ] Patient recuperado via busca.
 - [ ] Patient permanece disponível após reinício dos containers.
-- [ ] Evidências registradas.
+- [ ] Evidências finais registradas.
 
 Depois disso, o próximo componente será o **HIS Simulator + mensagem HL7v2 ADT^A01**.
