@@ -38,6 +38,8 @@ Nesta primeira etapa do produto foram implementados e validados:
 [x] Persistência após reinício
 ```
 
+📄 [Relatório técnico completo do Milestone 1.1](docs/reports/01-milestone-1.1-summary.md)
+
 ---
 
 ## Visão do produto
@@ -158,6 +160,7 @@ A documentação segue uma regra: **teoria → motivo → implementação → te
 - [Arquitetura v0.1](docs/architecture/01-overview.md)
 - [Fluxo ADT^A01 → FHIR](docs/architecture/02-adt-a01-flow.md)
 - [Status do projeto](docs/project-status.md)
+- [Relatório técnico — Milestone 1.1](docs/reports/01-milestone-1.1-summary.md)
 
 ### Implementação atual
 
@@ -259,11 +262,14 @@ healthcare-interoperability-labs/
 │   │   └── 01-local-fhir-environment.md
 │   ├── evidence/
 │   │   └── mvp-v0.1-local-fhir-validation.md
+│   ├── reports/
+│   │   └── 01-milestone-1.1-summary.md
 │   ├── 01-ingesting-hl7v2.md
 │   ├── 02-streaming-hl7v2-to-fhir.md
 │   ├── 03-ingesting-dicom.md
 │   └── 04-ingesting-fhir.md
 └── assets/
+    └── README.md
 ```
 
 A estrutura será expandida gradualmente conforme cada componente for implementado.
