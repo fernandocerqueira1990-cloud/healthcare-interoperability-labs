@@ -4,74 +4,56 @@
 
 Este repositório reúne duas frentes complementares:
 
-1. **Laboratórios de interoperabilidade em Google Cloud Healthcare API** — HL7v2, FHIR, DICOM/DICOMweb, Pub/Sub, Dataflow e BigQuery.
-2. **Healthcare Integration Gateway** — implementação local e modular para receber, validar, transformar, rotear, persistir e futuramente observar fluxos de interoperabilidade em saúde.
+1. **Laboratórios em Google Cloud Healthcare API** — HL7v2, FHIR, DICOM/DICOMweb, Pub/Sub, Dataflow e BigQuery.
+2. **Healthcare Integration Gateway** — implementação local para receber, validar, transformar, rotear e persistir fluxos de interoperabilidade em saúde.
 
-> Todos os exemplos públicos utilizam dados fictícios ou sintéticos. Nenhum dado real de paciente deve ser armazenado neste repositório.
+> Todos os exemplos públicos usam dados fictícios ou sintéticos.
 
 ---
 
 ## Status atual
 
-**MVP v0.1 — Milestone 1.1 concluído: Ambiente FHIR Local**
+**MVP v0.1 — Milestones 1.1 e 1.2 concluídos e validados**
 
-Nesta primeira etapa do produto foram implementados e validados:
+### ✅ Milestone 1.1 — Ambiente FHIR Local
 
-- HAPI FHIR R4 `8.10.0` em container;
-- PostgreSQL `16-alpine` como persistência;
-- Docker Compose para orquestração;
-- rede interna entre os serviços;
-- volume Docker para persistência;
-- endpoint `/fhir/metadata` respondendo com `CapabilityStatement`;
-- criação de `Patient` via `POST /fhir/Patient` com HTTP `201`;
-- busca por `Patient.identifier` retornando `Bundle` com `total: 1`;
-- persistência comprovada após remoção e recriação dos containers.
+- HAPI FHIR R4 `8.10.0`;
+- PostgreSQL `16-alpine`;
+- Docker Compose;
+- persistência em volume Docker;
+- `CapabilityStatement` validado;
+- `Patient` criado via REST;
+- busca por `Patient.identifier` validada;
+- persistência confirmada após recriação dos containers.
 
-### Validações concluídas
+### ✅ Milestone 1.2 — HIS Simulator + HL7v2 ADT^A01
 
-```text
-[x] PostgreSQL saudável
-[x] HAPI FHIR em execução
-[x] /fhir/metadata respondendo
-[x] Patient sintético criado
-[x] Patient recuperado via busca
-[x] Persistência após reinício
-```
+- mensagem HL7v2 `ADT^A01` sintética;
+- segmentos `MSH`, `EVN`, `PID` e `PV1`;
+- inspeção automatizada de campos;
+- tratamento específico do parsing de `MSH`;
+- validação estrutural mínima;
+- validação de `MSH-9`, `MSH-10`, `MSH-12`, `PID-3`, `PID-5`, `PV1-2`, `PV1-19` e `PV1-44`;
+- happy path com `VALIDATION RESULT: PASS`;
+- teste negativo controlado removendo `PV1-19`;
+- detecção com `VALIDATION RESULT: FAIL`;
+- restauração e revalidação com `PASS`;
+- troubleshooting documentado para deslocamento de campos no `PV1`.
 
-📄 [Relatório técnico completo do Milestone 1.1](docs/reports/01-milestone-1.1-summary.md)
+### 🔜 Próximo: Milestone 1.3 — Transporte MLLP + ACK/NACK
 
----
+Objetivos:
 
-## Visão do produto
-
-O **Healthcare Integration Gateway** está sendo desenvolvido como uma camada intermediária entre sistemas de saúde heterogêneos.
-
-```text
-Sistema de origem
-       |
-       v
-Healthcare Integration Gateway
-       |
-       v
-Sistema de destino
-```
-
-Responsabilidades planejadas:
-
-- receber dados por MLLP, REST e outros canais;
-- fazer parsing e interpretação;
-- validar estrutura e regras de integração;
-- transformar formatos e padrões;
-- rotear para diferentes destinos;
-- registrar auditoria, logs e rastreabilidade;
-- implementar retry e tratamento controlado de falhas;
-- permitir configuração por cliente sem alterar o core.
-
-Leia: [Product Vision](docs/product-vision.md)
+- criar receptor MLLP;
+- transmitir `ADT^A01`;
+- interpretar framing MLLP;
+- gerar ACK positivo e respostas de erro;
+- correlacionar ACK com `Message Control ID`;
+- registrar logs e evidências de transporte.
 
 ---
 
-## Arquitetura MVP v0.1
+## Arquitetura do produto
 
 ```mermaid
 flowchart LR
@@ -90,24 +72,7 @@ flowchart LR
     F -.-> I
 ```
 
-### Fluxo atual implementado
-
-```text
-Developer / Gateway
-        |
-        | HTTP REST :8080
-        v
-   HAPI FHIR R4
-        |
-        | JDBC :5432
-        v
-     PostgreSQL
-        |
-        v
-   Docker Volume
-```
-
-### Próximo fluxo
+### Fluxo implementado hoje
 
 ```text
 HIS Simulator
@@ -115,27 +80,52 @@ HIS Simulator
       v
 HL7v2 ADT^A01
       |
+      +--> Inspector
+      |
+      `--> Structural Validator
+              |
+              +--> PASS
+              `--> FAIL
+
+HAPI FHIR R4
+      |
+      | JDBC
       v
-MLLP
+PostgreSQL
       |
       v
-Parser -> Validator -> Transformer
+Docker Volume
+```
+
+### Próximo fluxo
+
+```text
+HIS Simulator
+      |
+      | HL7v2 ADT^A01 / MLLP
+      v
+MLLP Receiver
       |
       v
-FHIR Patient + Encounter
+Parser -> Validator
+      |
+      +--> ACK / NACK
+      |
+      v
+Transformer -> FHIR Patient + Encounter
 ```
 
 ---
 
-## Roadmap do Healthcare Integration Gateway
+## Roadmap
 
-| Versão / Etapa | Escopo | Status |
+| Etapa | Escopo | Status |
 |---|---|---|
 | MVP v0.1 / 1.1 | Ambiente FHIR local — HAPI FHIR + PostgreSQL | ✅ Concluído |
-| MVP v0.1 / 1.2 | HIS Simulator + HL7v2 ADT^A01 | 🔜 Próximo |
-| MVP v0.1 / 1.3 | Transporte MLLP + ACK | Planejado |
+| MVP v0.1 / 1.2 | HIS Simulator + HL7v2 ADT^A01 | ✅ Concluído |
+| MVP v0.1 / 1.3 | Transporte MLLP + ACK/NACK | 🔜 Próximo |
 | MVP v0.1 / 1.4 | Parser + Validator HL7v2 | Planejado |
-| MVP v0.1 / 1.5 | Transformação ADT^A01 → Patient + Encounter | Planejado |
+| MVP v0.1 / 1.5 | ADT^A01 → FHIR Patient + Encounter | Planejado |
 | MVP v0.1 / 1.6 | Pipeline end-to-end | Planejado |
 | v0.2 | ORM / ORU → ServiceRequest / Observation / DiagnosticReport | Planejado |
 | v0.3 | REST API Gateway e webhooks | Planejado |
@@ -149,9 +139,11 @@ FHIR Patient + Encounter
 
 ---
 
-## Documentação do projeto
+## Documentação
 
-A documentação segue uma regra: **teoria → motivo → implementação → teste → validação → troubleshooting → evidência**.
+A regra do projeto é:
+
+**teoria → motivo → implementação → teste → validação → troubleshooting → evidência**
 
 ### Produto e arquitetura
 
@@ -160,89 +152,71 @@ A documentação segue uma regra: **teoria → motivo → implementação → te
 - [Arquitetura v0.1](docs/architecture/01-overview.md)
 - [Fluxo ADT^A01 → FHIR](docs/architecture/02-adt-a01-flow.md)
 - [Status do projeto](docs/project-status.md)
-- [Relatório técnico — Milestone 1.1](docs/reports/01-milestone-1.1-summary.md)
 
-### Implementação atual
+### Implementação
 
-- [Ambiente FHIR local](docs/implementation/01-local-fhir-environment.md)
-- [Evidência — validação do ambiente FHIR local](docs/evidence/mvp-v0.1-local-fhir-validation.md)
+- [01 — Ambiente FHIR local](docs/implementation/01-local-fhir-environment.md)
+- [02 — HIS Simulator + HL7v2 ADT^A01](docs/implementation/02-his-simulator-adt-a01.md)
 
-### Laboratórios Google Cloud já concluídos
+### Evidências
 
-- [Ingesting HL7v2 Data with the Healthcare API](docs/01-ingesting-hl7v2.md)
-- [Streaming HL7 to FHIR Data with Healthcare API](docs/02-streaming-hl7v2-to-fhir.md)
-- [Ingesting DICOM Data with the Healthcare API](docs/03-ingesting-dicom.md)
-- [Ingesting FHIR Data with the Healthcare API](docs/04-ingesting-fhir.md)
-- [Arquitetura dos labs Google Cloud](docs/architecture.md)
-- [Mapa de evidências dos labs](docs/evidence.md)
-- [Roadmap original](docs/roadmap.md)
+- [Validação do ambiente FHIR local](docs/evidence/mvp-v0.1-local-fhir-validation.md)
+- [Validação do HIS Simulator / ADT^A01](docs/evidence/mvp-v0.1-his-simulator-validation.md)
+
+### Relatórios
+
+- [Milestone 1.1](docs/reports/01-milestone-1.1-summary.md)
+- [Milestone 1.2](docs/reports/02-milestone-1.2-summary.md)
+
+### Guia de estudo
+
+- [InterSystems Technical Specialist — Guia de estudo](docs/study/intersystems-technical-specialist-interview-guide.md)
+
+### Labs Google Cloud
+
+- [Ingesting HL7v2](docs/01-ingesting-hl7v2.md)
+- [Streaming HL7v2 to FHIR](docs/02-streaming-hl7v2-to-fhir.md)
+- [Ingesting DICOM](docs/03-ingesting-dicom.md)
+- [Ingesting FHIR](docs/04-ingesting-fhir.md)
 
 ---
 
-## Executando o ambiente FHIR local
+## Executando o laboratório
 
-### Pré-requisitos
-
-- Docker
-- Docker Compose
-- Git
-
-### Subir o ambiente
+### Subir HAPI FHIR + PostgreSQL
 
 ```bash
-git clone https://github.com/fernandocerqueira1990-cloud/healthcare-interoperability-labs.git
-cd healthcare-interoperability-labs/docker
+cd docker
 docker compose up -d
 ```
 
-### Verificar os serviços
+### Verificar serviços
 
 ```bash
 docker compose ps
 ```
 
-### CapabilityStatement
+### Inspecionar ADT^A01
 
 ```bash
-curl -s http://localhost:8080/fhir/metadata | head -n 30
+python3 src/his-simulator/tools/inspect_hl7.py
 ```
 
-### Criar um Patient sintético
+### Validar ADT^A01
 
 ```bash
-curl -i -X POST http://localhost:8080/fhir/Patient \
-  -H "Content-Type: application/fhir+json" \
-  -d '{
-    "resourceType":"Patient",
-    "identifier":[{
-      "system":"https://hospital-demo.local/mrn",
-      "value":"789012"
-    }],
-    "name":[{
-      "family":"Santos",
-      "given":["Marina"]
-    }],
-    "gender":"female",
-    "birthDate":"1992-08-10"
-  }'
+python3 src/his-simulator/tools/validate_adt_a01.py
 ```
 
-### Buscar pelo identificador de negócio
+Happy path esperado:
 
-```bash
-curl -s "http://localhost:8080/fhir/Patient?identifier=789012" | jq '{
-  resourceType,
-  type,
-  total,
-  patient: .entry[0].resource
-}'
+```text
+VALIDATION RESULT: PASS
 ```
-
-> Credenciais e dados desta configuração são exclusivamente para desenvolvimento local. Não reutilizar em produção.
 
 ---
 
-## Estrutura atual do repositório
+## Estrutura atual
 
 ```text
 healthcare-interoperability-labs/
@@ -251,6 +225,13 @@ healthcare-interoperability-labs/
 ├── docker/
 │   ├── docker-compose.yml
 │   └── hapi.application.yaml
+├── src/
+│   └── his-simulator/
+│       ├── messages/
+│       │   └── adt_a01.hl7
+│       └── tools/
+│           ├── inspect_hl7.py
+│           └── validate_adt_a01.py
 ├── docs/
 │   ├── README.md
 │   ├── product-vision.md
@@ -259,60 +240,48 @@ healthcare-interoperability-labs/
 │   │   ├── 01-overview.md
 │   │   └── 02-adt-a01-flow.md
 │   ├── implementation/
-│   │   └── 01-local-fhir-environment.md
+│   │   ├── 01-local-fhir-environment.md
+│   │   └── 02-his-simulator-adt-a01.md
 │   ├── evidence/
-│   │   └── mvp-v0.1-local-fhir-validation.md
+│   │   ├── mvp-v0.1-local-fhir-validation.md
+│   │   └── mvp-v0.1-his-simulator-validation.md
 │   ├── reports/
-│   │   └── 01-milestone-1.1-summary.md
-│   ├── 01-ingesting-hl7v2.md
-│   ├── 02-streaming-hl7v2-to-fhir.md
-│   ├── 03-ingesting-dicom.md
-│   └── 04-ingesting-fhir.md
+│   │   ├── 01-milestone-1.1-summary.md
+│   │   └── 02-milestone-1.2-summary.md
+│   └── study/
+│       └── intersystems-technical-specialist-interview-guide.md
 └── assets/
     └── README.md
 ```
 
-A estrutura será expandida gradualmente conforme cada componente for implementado.
-
 ---
 
-## Princípios técnicos adotados
+## Princípios técnicos
 
 - modularidade;
 - baixo acoplamento;
 - configuração por cliente;
-- observabilidade desde o início;
 - dados sintéticos em ambiente público;
 - infraestrutura reproduzível;
 - validação incremental;
 - documentação junto com código;
-- troubleshooting documentado quando tecnicamente relevante.
+- troubleshooting documentado;
+- observabilidade como requisito arquitetural.
 
 ---
 
 ## Competências praticadas
 
-- Healthcare IT e interoperabilidade
-- HL7v2 e MLLP
-- FHIR R4
-- DICOM / DICOMweb
-- HAPI FHIR
-- PostgreSQL
-- Docker e Docker Compose
-- REST APIs e `curl`
-- Google Cloud Healthcare API
-- Pub/Sub e Dataflow
-- BigQuery
-- GKE / containers
-- arquitetura de integração hospitalar
-- troubleshooting e validação técnica
-
----
-
-## Autor
-
-**Fernando Henrique Cerqueira**  
-Senior Systems Analyst & Healthcare IT Specialist  
-Healthcare IT | Integrações | Sustentação | Dados Clínicos | HL7 / FHIR
-
-[GitHub](https://github.com/fernandocerqueira1990-cloud) · [LinkedIn](https://www.linkedin.com/in/fernando-cerqueira-it/)
+- Healthcare IT e interoperabilidade;
+- HL7v2 / ADT^A01;
+- parsing e validação estrutural;
+- FHIR R4;
+- HAPI FHIR;
+- PostgreSQL;
+- Docker / Docker Compose;
+- Python;
+- REST APIs;
+- DICOM / DICOMweb;
+- Google Cloud Healthcare API;
+- arquitetura de integração hospitalar;
+- troubleshooting e validação técnica.
