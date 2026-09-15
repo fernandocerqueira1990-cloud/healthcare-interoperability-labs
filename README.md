@@ -55,24 +55,68 @@ Objetivos:
 
 ## Arquitetura do produto
 
+A arquitetura abaixo representa o **estado real do MVP v0.1**, separando o que já está implementado do que ainda faz parte do pipeline planejado.
+
 ```mermaid
 flowchart LR
-    A[HIS Simulator] -->|HL7v2 ADT A01| B[MLLP Receiver]
-    B --> C[HL7 Parser]
-    C --> D[Validator]
-    D --> E[HL7 to FHIR Transformer]
-    E --> F[Router]
-    F -->|REST FHIR| G[HAPI FHIR R4]
-    G --> H[(PostgreSQL)]
+    subgraph IMPLEMENTADO[Implementado e validado]
+        A[HIS Simulator / ADT^A01]
+        B[HL7 Inspector]
+        C[Structural Validator]
+        G[HAPI FHIR R4]
+        H[(PostgreSQL)]
 
-    B -.-> I[Audit / Logs]
-    C -.-> I
-    D -.-> I
-    E -.-> I
-    F -.-> I
+        A --> B
+        A --> C
+        G -->|JDBC| H
+    end
+
+    subgraph PROXIMO[Milestone 1.3 - próximo passo]
+        D[MLLP Receiver]
+        E[ACK / NACK]
+        A -.->|HL7v2 ADT^A01 / MLLP| D
+        D -.-> E
+    end
+
+    subgraph PLANEJADO[Pipeline planejado]
+        P[HL7 Parser]
+        V[Validator Core]
+        T[HL7 to FHIR Transformer]
+        R[Router]
+        L[Audit / Logs]
+
+        D -.-> P
+        P -.-> V
+        V -.-> T
+        T -.-> R
+        R -.->|REST FHIR| G
+
+        D -.-> L
+        P -.-> L
+        V -.-> L
+        T -.-> L
+        R -.-> L
+    end
 ```
 
-### Fluxo implementado hoje
+### Legenda de status
+
+| Componente | Status atual |
+|---|---|
+| HIS Simulator / mensagem ADT^A01 | ✅ Implementado |
+| HL7 Inspector | ✅ Implementado |
+| Structural Validator | ✅ Implementado |
+| HAPI FHIR R4 | ✅ Implementado |
+| PostgreSQL / persistência | ✅ Implementado |
+| MLLP Receiver | 🔜 Próximo milestone |
+| ACK / NACK | 🔜 Próximo milestone |
+| HL7 Parser desacoplado | ⏳ Planejado |
+| Validator Core desacoplado | ⏳ Planejado |
+| HL7 → FHIR Transformer | ⏳ Planejado |
+| Router | ⏳ Planejado |
+| Audit / Logs estruturados | ⏳ Planejado |
+
+### Fluxo implementado atualmente
 
 ```text
 HIS Simulator
@@ -80,7 +124,7 @@ HIS Simulator
       v
 HL7v2 ADT^A01
       |
-      +--> Inspector
+      +--> HL7 Inspector
       |
       `--> Structural Validator
               |
@@ -97,7 +141,24 @@ PostgreSQL
 Docker Volume
 ```
 
-### Próximo fluxo
+> Neste momento, os dois blocos implementados ainda não estão conectados ponta a ponta. A conexão entre origem HL7v2 e destino FHIR será construída progressivamente nos próximos milestones.
+
+### Próximo fluxo — Milestone 1.3
+
+```text
+HIS Simulator
+      |
+      | HL7v2 ADT^A01 / MLLP
+      v
+MLLP Receiver
+      |
+      +--> ACK / NACK
+      |
+      v
+Parser / Validator
+```
+
+### Arquitetura alvo do MVP v0.1
 
 ```text
 HIS Simulator
@@ -107,12 +168,28 @@ HIS Simulator
 MLLP Receiver
       |
       v
-Parser -> Validator
-      |
-      +--> ACK / NACK
+HL7 Parser
       |
       v
-Transformer -> FHIR Patient + Encounter
+Validator
+      |
+      v
+HL7 -> FHIR Transformer
+      |
+      | Patient + Encounter
+      v
+Router
+      |
+      | REST FHIR
+      v
+HAPI FHIR R4
+      |
+      v
+PostgreSQL
+
+Todos os componentes críticos
+      |
+      `--> Audit / Logs
 ```
 
 ---
