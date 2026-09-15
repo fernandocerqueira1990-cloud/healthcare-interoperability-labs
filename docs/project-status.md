@@ -5,7 +5,8 @@
 O projeto está na fase **MVP v0.1**.
 
 - **Milestone 1.1 — Ambiente FHIR Local:** concluído e validado.
-- **Milestone 1.2 — HIS Simulator + HL7v2 ADT^A01:** em implementação avançada, com mensagem sintética, inspeção de campos, validação estrutural, teste negativo e troubleshooting documentados.
+- **Milestone 1.2 — HIS Simulator + HL7v2 ADT^A01:** concluído e validado.
+- **Milestone 1.3 — Transporte MLLP + ACK/NACK:** próximo passo.
 
 ---
 
@@ -46,7 +47,7 @@ Criar um destino FHIR local, persistente e reproduzível antes de implementar o 
 
 Introduzir o sistema de origem do laboratório e validar uma mensagem HL7v2 `ADT^A01` antes de implementar transporte MLLP.
 
-### Implementado até agora
+### Implementado e validado
 
 ```text
 [x] estrutura src/his-simulator/
