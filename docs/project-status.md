@@ -4,7 +4,8 @@
 
 O projeto está na fase **MVP v0.1**.
 
-O **Milestone 1.1 — Ambiente FHIR Local** foi concluído e validado.
+- **Milestone 1.1 — Ambiente FHIR Local:** concluído e validado.
+- **Milestone 1.2 — HIS Simulator + HL7v2 ADT^A01:** em implementação avançada, com mensagem sintética, inspeção de campos, validação estrutural, teste negativo e troubleshooting documentados.
 
 ---
 
@@ -37,115 +38,81 @@ Criar um destino FHIR local, persistente e reproduzível antes de implementar o 
 [x] Persistência comprovada após docker compose down/up
 ```
 
-### Resultado técnico
+---
 
-A infraestrutura local foi validada ponta a ponta:
+## Milestone 1.2 — HIS Simulator + HL7v2 ADT^A01
+
+### Objetivo
+
+Introduzir o sistema de origem do laboratório e validar uma mensagem HL7v2 `ADT^A01` antes de implementar transporte MLLP.
+
+### Implementado até agora
 
 ```text
-Cliente REST
-    |
-    v
-HAPI FHIR R4
-    |
-    | JDBC
-    v
-PostgreSQL
-    |
-    v
-Docker Volume
+[x] estrutura src/his-simulator/
+[x] mensagem ADT^A01 sintética
+[x] segmentos MSH, EVN, PID e PV1
+[x] utilitário de inspeção de campos
+[x] tratamento específico de MSH-1/MSH-2
+[x] validação estrutural mínima
+[x] validação de MSH-9 = ADT^A01
+[x] validação de Message Control ID
+[x] validação de versão HL7
+[x] validação de Patient Identifier
+[x] validação de Patient Name
+[x] validação de Patient Class
+[x] validação de Visit Number
+[x] validação de Admit Date/Time
+[x] happy path com resultado PASS
+[x] teste negativo com remoção de PV1-19
+[x] detecção do erro com resultado FAIL
+[x] restauração da mensagem
+[x] revalidação com resultado PASS
+[x] troubleshooting de deslocamento de campos PV1
 ```
 
-O teste de persistência confirmou que o recurso `Patient` permaneceu disponível mesmo após remover e recriar os containers.
+### Troubleshooting registrado
+
+Durante a construção inicial, `Visit Number` foi posicionado em `PV1-18` e `Admit Date/Time` ficou deslocado. A causa foi a quantidade incorreta de delimitadores vazios no segmento `PV1`.
+
+Após correção e inspeção automatizada:
+
+```text
+PV1-19 = Visit Number
+PV1-44 = Admit Date/Time
+```
+
+O teste negativo controlado removeu `PV1-19`, gerando:
+
+```text
+[ERROR] PV1-19 (Visit Number) vazio ou ausente
+VALIDATION RESULT: FAIL
+```
+
+Após restauração:
+
+```text
+VALIDATION RESULT: PASS
+```
+
+### Conceitos consolidados
+
+- HL7v2 orientado a mensagens/eventos;
+- `ADT` = Admission, Discharge and Transfer;
+- `A01` = admissão/visit notification;
+- `MSH` = Message Header;
+- `EVN` = Event Type;
+- `PID` = Patient Identification;
+- `PV1` = Patient Visit;
+- diferença entre Patient Identifier e Visit Number;
+- importância posicional dos delimitadores HL7;
+- parsing especial de `MSH`;
+- distinção entre inspeção e validação;
+- relação conceitual `PID → FHIR Patient` e `PV1 → FHIR Encounter`.
 
 ---
 
-## Evidências funcionais principais
-
-### Infraestrutura
-
-```bash
-docker compose ps
-```
-
-Resultado esperado e validado:
-
-- `healthcare-hapi-fhir` ativo;
-- `healthcare-postgres` ativo;
-- PostgreSQL `healthy`;
-- HAPI publicado em `localhost:8080`.
-
-### Servidor FHIR
-
-```bash
-curl -s http://localhost:8080/fhir/metadata
-```
-
-Validado:
-
-- `resourceType: CapabilityStatement`;
-- HAPI FHIR Server `8.10.0`;
-- FHIR `4.0.1 / R4`;
-- HTTP `200`.
-
-### Criação de recurso
-
-Foi criado um `Patient` sintético por:
-
-```text
-POST /fhir/Patient
-```
-
-Validado:
-
-```text
-HTTP 201
-resourceType: Patient
-versionId: 1
-```
-
-### Busca por identificador de negócio
-
-```bash
-curl -s "http://localhost:8080/fhir/Patient?identifier=<MRN>"
-```
-
-Validado:
-
-```text
-resourceType: Bundle
-type: searchset
-total: 1
-```
-
----
-
-## Decisões arquiteturais já adotadas
-
-- começar pelo destino FHIR antes do pipeline HL7v2;
-- trabalhar com componentes separados e de baixo acoplamento;
-- usar versão fixa das imagens para reprodutibilidade;
-- manter PostgreSQL não exposto desnecessariamente ao host;
-- persistir dados em Docker Volume;
-- utilizar somente dados sintéticos no repositório público;
-- documentar teoria, implementação, teste e troubleshooting junto com o código;
-- preparar a arquitetura para futura configuração por cliente.
-
----
-
-## Próximo milestone
-
-### Milestone 1.2 — HL7v2 ADT^A01 + HIS Simulator
-
-Objetivos previstos:
-
-1. estudar a estrutura da mensagem ADT^A01;
-2. documentar MSH, EVN, PID e PV1;
-3. criar mensagens HL7v2 sintéticas;
-4. implementar um HIS Simulator;
-5. preparar o envio futuro por MLLP;
-6. iniciar a associação entre campos HL7v2 e recursos FHIR `Patient` / `Encounter`.
-
-Fluxo planejado:
+## Fluxo implementado até o momento
 
 ```text
 HIS Simulator
@@ -153,20 +120,55 @@ HIS Simulator
       v
 HL7v2 ADT^A01
       |
+      +--> Inspector
+      |
+      `--> Structural Validator
+              |
+              +--> PASS
+              `--> FAIL
+```
+
+Destino FHIR já disponível do Milestone 1.1:
+
+```text
+HAPI FHIR R4
+      |
+      v
+PostgreSQL
+```
+
+---
+
+## Próximo milestone
+
+### Milestone 1.3 — Transporte MLLP + ACK/NACK
+
+Objetivos:
+
+1. criar receptor MLLP;
+2. transmitir a mensagem ADT^A01;
+3. interpretar framing MLLP;
+4. gerar ACK positivo;
+5. gerar respostas de erro quando aplicável;
+6. correlacionar ACK com Message Control ID;
+7. registrar logs e evidências de transporte.
+
+Fluxo alvo:
+
+```text
+HIS Simulator
+      |
+      | HL7v2 ADT^A01 / MLLP
       v
 MLLP Receiver
       |
       v
-Parser
+Parser -> Validator
+      |
+      +--> ACK/NACK
       |
       v
-Validator
-      |
-      v
-Transformer
-      |
-      v
-FHIR Patient + Encounter
+Transformer -> FHIR Patient + Encounter
 ```
 
 ---

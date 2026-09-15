@@ -32,17 +32,43 @@ A documentação é dividida entre a base de estudos já concluída em Google Cl
   - criação e busca de Patient;
   - teste de persistência.
 
+- [02 — HIS Simulator + HL7v2 ADT^A01](implementation/02-his-simulator-adt-a01.md)
+  - estrutura ADT^A01;
+  - MSH, EVN, PID e PV1;
+  - inspeção de campos HL7;
+  - particularidade do parsing de MSH;
+  - validação estrutural;
+  - teste negativo controlado;
+  - troubleshooting de posição de campos;
+  - relação conceitual com FHIR e InterSystems.
+
 ---
 
 ## 4. Evidências
 
 - [MVP v0.1 — Validação do Ambiente FHIR Local](evidence/mvp-v0.1-local-fhir-validation.md)
+- [MVP v0.1 — Validação do HIS Simulator / ADT^A01](evidence/mvp-v0.1-his-simulator-validation.md)
 
-O documento registra comandos, resultados esperados, resultados observados e interpretação técnica dos testes.
+Os documentos registram comandos, resultados esperados, resultados observados, interpretação técnica, testes positivos e negativos e troubleshooting.
 
 ---
 
-## 5. Laboratórios Google Cloud já concluídos
+## 5. Relatórios técnicos
+
+- [Milestone 1.1 — Ambiente FHIR Local](reports/01-milestone-1.1-summary.md)
+- [Milestone 1.2 — HIS Simulator + HL7v2 ADT^A01](reports/02-milestone-1.2-summary.md)
+
+---
+
+## 6. Guia de estudo / preparação técnica
+
+- [InterSystems Technical Specialist — Guia de estudo](study/intersystems-technical-specialist-interview-guide.md)
+
+O guia consolida siglas, arquitetura, HL7v2, FHIR, MLLP, ACK/NACK, HIS/RIS/LIS/PACS, troubleshooting, SQL, conceitos InterSystems e relação com os cases profissionais e o laboratório.
+
+---
+
+## 7. Laboratórios Google Cloud já concluídos
 
 Esses laboratórios formam a base conceitual que está sendo levada para a implementação própria do gateway.
 
@@ -56,7 +82,7 @@ Esses laboratórios formam a base conceitual que está sendo levada para a imple
 
 ---
 
-## 6. Regra de documentação do projeto
+## 8. Regra de documentação do projeto
 
 Cada nova fase deve registrar, sempre que aplicável:
 
