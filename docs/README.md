@@ -60,7 +60,15 @@ Os documentos registram comandos, resultados esperados, resultados observados, i
 
 ---
 
-## 6. Laboratórios Google Cloud já concluídos
+## 6. Guia de estudo / preparação técnica
+
+- [InterSystems Technical Specialist — Guia de estudo](study/intersystems-technical-specialist-interview-guide.md)
+
+O guia consolida siglas, arquitetura, HL7v2, FHIR, MLLP, ACK/NACK, HIS/RIS/LIS/PACS, troubleshooting, SQL, conceitos InterSystems e relação com os cases profissionais e o laboratório.
+
+---
+
+## 7. Laboratórios Google Cloud já concluídos
 
 Esses laboratórios formam a base conceitual que está sendo levada para a implementação própria do gateway.
 
@@ -74,7 +82,7 @@ Esses laboratórios formam a base conceitual que está sendo levada para a imple
 
 ---
 
-## 7. Regra de documentação do projeto
+## 8. Regra de documentação do projeto
 
 Cada nova fase deve registrar, sempre que aplicável:
 
