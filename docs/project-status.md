@@ -4,9 +4,10 @@
 
 O projeto está na fase **MVP v0.1**.
 
-- **Milestone 1.1 — Ambiente FHIR Local:** concluído e validado.
-- **Milestone 1.2 — HIS Simulator + HL7v2 ADT^A01:** concluído e validado.
-- **Milestone 1.3 — Transporte MLLP + ACK/NACK:** próximo passo.
+- **Milestone 1.1 — Ambiente FHIR Local:** ✅ concluído e validado.
+- **Milestone 1.2 — HIS Simulator + HL7v2 ADT^A01:** ✅ concluído e validado.
+- **Milestone 1.3 — Transporte MLLP + ACK/NACK:** ✅ concluído e validado.
+- **Milestone 1.4 — HL7 Parser + Validator Core desacoplados:** 🔜 próximo passo.
 
 ---
 
@@ -56,80 +57,139 @@ Introduzir o sistema de origem do laboratório e validar uma mensagem HL7v2 `ADT
 [x] utilitário de inspeção de campos
 [x] tratamento específico de MSH-1/MSH-2
 [x] validação estrutural mínima
-[x] validação de MSH-9 = ADT^A01
-[x] validação de Message Control ID
-[x] validação de versão HL7
-[x] validação de Patient Identifier
-[x] validação de Patient Name
-[x] validação de Patient Class
-[x] validação de Visit Number
-[x] validação de Admit Date/Time
-[x] happy path com resultado PASS
-[x] teste negativo com remoção de PV1-19
-[x] detecção do erro com resultado FAIL
-[x] restauração da mensagem
-[x] revalidação com resultado PASS
+[x] happy path PASS
+[x] teste negativo controlado
 [x] troubleshooting de deslocamento de campos PV1
+```
+
+---
+
+## Milestone 1.3 — Transporte MLLP + ACK/NACK
+
+### Objetivo
+
+Adicionar uma interface real de entrada HL7v2 via TCP/MLLP e responder ao emissor com ACK coerente com o resultado do processamento inicial.
+
+### Componentes implementados
+
+- `src/gateway/receivers/mllp_receiver.py`;
+- `src/his-simulator/tools/send_mllp.py`;
+- mensagem `ADT^A01` inválida para teste de `AE`;
+- mensagem `ORM^O01` não suportada para teste de `AR`;
+- `.gitignore` para artefatos Python.
+
+### Transporte validado
+
+```text
+[x] socket TCP
+[x] bind em 127.0.0.1:2575
+[x] conexão HIS Simulator -> Gateway
+[x] framing MLLP 0x0B ... 0x1C 0x0D
+[x] extração de mensagem do buffer
+[x] ACK retornado pelo mesmo transporte
+```
+
+### Parsing mínimo usado no milestone
+
+O Receiver extrai atualmente os metadados necessários do `MSH` para provar transporte e acknowledgement:
+
+- `MSH-9` — Message Type;
+- `MSH-10` — Message Control ID;
+- `MSH-11` — Processing ID;
+- `MSH-12` — Version ID;
+- aplicações e facilities de origem/destino para construção do ACK.
+
+Essa responsabilidade será desacoplada no Milestone 1.4.
+
+### ACKs validados
+
+#### AA — Application Accept
+
+Entrada:
+
+```text
+MSH-9  = ADT^A01
+MSH-10 = MSG00001
+```
+
+Resposta:
+
+```text
+MSA|AA|MSG00001|Message accepted
+ACK VALIDATION RESULT: PASS
+```
+
+#### AE — Application Error
+
+Entrada:
+
+```text
+MSH-9  = ADT^A01
+MSH-10 = vazio
+```
+
+Resposta:
+
+```text
+MSA|AE||Missing Message Control ID
+ACK VALIDATION RESULT: PASS
+```
+
+#### AR — Application Reject
+
+Entrada:
+
+```text
+MSH-9  = ORM^O01
+MSH-10 = MSG00002
+```
+
+Resposta:
+
+```text
+MSA|AR|MSG00002|Unsupported message type
+ACK VALIDATION RESULT: PASS
 ```
 
 ### Troubleshooting registrado
 
-Durante a construção inicial, `Visit Number` foi posicionado em `PV1-18` e `Admit Date/Time` ficou deslocado. A causa foi a quantidade incorreta de delimitadores vazios no segmento `PV1`.
+Durante o cenário de `AE`, um separador `|` adicional no `MSH` deslocou os campos seguintes.
 
-Após correção e inspeção automatizada:
-
-```text
-PV1-19 = Visit Number
-PV1-44 = Admit Date/Time
-```
-
-O teste negativo controlado removeu `PV1-19`, gerando:
+Sintoma observado:
 
 ```text
-[ERROR] PV1-19 (Visit Number) vazio ou ausente
-VALIDATION RESULT: FAIL
+type=
+control_id=ADT^A01
 ```
 
-Após restauração:
+A inspeção dos índices mostrou que `ADT^A01` havia sido deslocado para a posição lida como `MSH-10`.
+
+Após correção:
 
 ```text
-VALIDATION RESULT: PASS
+type=ADT^A01
+control_id=<missing>
 ```
 
-### Conceitos consolidados
+E o Receiver passou a gerar corretamente `AE`.
 
-- HL7v2 orientado a mensagens/eventos;
-- `ADT` = Admission, Discharge and Transfer;
-- `A01` = admissão/visit notification;
-- `MSH` = Message Header;
-- `EVN` = Event Type;
-- `PID` = Patient Identification;
-- `PV1` = Patient Visit;
-- diferença entre Patient Identifier e Visit Number;
-- importância posicional dos delimitadores HL7;
-- parsing especial de `MSH`;
-- distinção entre inspeção e validação;
-- relação conceitual `PID → FHIR Patient` e `PV1 → FHIR Encounter`.
-
----
-
-## Fluxo implementado até o momento
+### Fluxo implementado após o Milestone 1.3
 
 ```text
 HIS Simulator
       |
+      | HL7v2 / TCP / MLLP
       v
-HL7v2 ADT^A01
+MLLP Receiver
       |
-      +--> Inspector
+      +--> MSH metadata
+      +--> AA / AE / AR
       |
-      `--> Structural Validator
-              |
-              +--> PASS
-              `--> FAIL
+      v
+ACK via MLLP
 ```
 
-Destino FHIR já disponível do Milestone 1.1:
+Destino FHIR já disponível, ainda separado do fluxo MLLP:
 
 ```text
 HAPI FHIR R4
@@ -142,34 +202,37 @@ PostgreSQL
 
 ## Próximo milestone
 
-### Milestone 1.3 — Transporte MLLP + ACK/NACK
+### Milestone 1.4 — HL7 Parser + Validator Core desacoplados
 
 Objetivos:
 
-1. criar receptor MLLP;
-2. transmitir a mensagem ADT^A01;
-3. interpretar framing MLLP;
-4. gerar ACK positivo;
-5. gerar respostas de erro quando aplicável;
-6. correlacionar ACK com Message Control ID;
-7. registrar logs e evidências de transporte.
+1. extrair parsing HL7v2 do MLLP Receiver;
+2. criar parser reutilizável;
+3. criar Validator Core independente do transporte;
+4. reutilizar e evoluir as validações do Milestone 1.2;
+5. manter decisão de ACK baseada no resultado do pipeline;
+6. ampliar testes unitários/negativos;
+7. preparar o caminho para o Transformer HL7 → FHIR.
 
 Fluxo alvo:
 
 ```text
 HIS Simulator
       |
-      | HL7v2 ADT^A01 / MLLP
+      | MLLP
       v
 MLLP Receiver
       |
       v
-Parser -> Validator
-      |
-      +--> ACK/NACK
+HL7 Parser
       |
       v
-Transformer -> FHIR Patient + Encounter
+Validator Core
+      |
+      +--> ACK decision
+      |
+      v
+Transformer (Milestone 1.5)
 ```
 
 ---

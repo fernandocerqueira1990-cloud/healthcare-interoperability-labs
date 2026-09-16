@@ -13,7 +13,7 @@ Este repositório reúne duas frentes complementares:
 
 ## Status atual
 
-**MVP v0.1 — Milestones 1.1 e 1.2 concluídos e validados**
+**MVP v0.1 — Milestones 1.1, 1.2 e 1.3 concluídos e validados**
 
 ### ✅ Milestone 1.1 — Ambiente FHIR Local
 
@@ -33,29 +33,41 @@ Este repositório reúne duas frentes complementares:
 - inspeção automatizada de campos;
 - tratamento específico do parsing de `MSH`;
 - validação estrutural mínima;
-- validação de `MSH-9`, `MSH-10`, `MSH-12`, `PID-3`, `PID-5`, `PV1-2`, `PV1-19` e `PV1-44`;
 - happy path com `VALIDATION RESULT: PASS`;
-- teste negativo controlado removendo `PV1-19`;
-- detecção com `VALIDATION RESULT: FAIL`;
-- restauração e revalidação com `PASS`;
-- troubleshooting documentado para deslocamento de campos no `PV1`.
+- teste negativo controlado;
+- troubleshooting de deslocamento de campos no `PV1`.
 
-### 🔜 Próximo: Milestone 1.3 — Transporte MLLP + ACK/NACK
+### ✅ Milestone 1.3 — Transporte MLLP + ACK/NACK
+
+- MLLP Receiver em `127.0.0.1:2575`;
+- HIS Simulator MLLP Client;
+- TCP + framing MLLP;
+- envio real de HL7v2 pelo simulador;
+- extração da mensagem do buffer TCP;
+- leitura de `MSH-9` e `MSH-10`;
+- correlação por `Message Control ID`;
+- `AA` — Application Accept;
+- `AE` — Application Error;
+- `AR` — Application Reject;
+- logs operacionais;
+- testes positivos e negativos;
+- troubleshooting de delimitador adicional no `MSH`.
+
+### 🔜 Próximo: Milestone 1.4 — HL7 Parser + Validator Core desacoplados
 
 Objetivos:
 
-- criar receptor MLLP;
-- transmitir `ADT^A01`;
-- interpretar framing MLLP;
-- gerar ACK positivo e respostas de erro;
-- correlacionar ACK com `Message Control ID`;
-- registrar logs e evidências de transporte.
+- retirar parsing HL7 do Receiver;
+- criar parser reutilizável;
+- criar Validator Core independente do transporte;
+- reaproveitar e evoluir as validações do Milestone 1.2;
+- preparar o pipeline para transformação HL7v2 → FHIR.
 
 ---
 
 ## Arquitetura do produto
 
-A arquitetura abaixo representa o **estado real do MVP v0.1**, separando o que já está implementado do que ainda faz parte do pipeline planejado.
+A arquitetura abaixo representa o estado atual do MVP v0.1 e separa o que já está implementado do que ainda será construído.
 
 ```mermaid
 flowchart LR
@@ -63,30 +75,31 @@ flowchart LR
         A[HIS Simulator / ADT^A01]
         B[HL7 Inspector]
         C[Structural Validator]
+        D[MLLP Receiver]
+        E[ACK AA / AE / AR]
         G[HAPI FHIR R4]
         H[(PostgreSQL)]
 
         A --> B
         A --> C
+        A -->|TCP / MLLP| D
+        D --> E
+        E -->|ACK / MLLP| A
         G -->|JDBC| H
     end
 
-    subgraph PROXIMO[Milestone 1.3 - próximo passo]
-        D[MLLP Receiver]
-        E[ACK / NACK]
-        A -.->|HL7v2 ADT^A01 / MLLP| D
-        D -.-> E
+    subgraph PROXIMO[Milestone 1.4]
+        P[HL7 Parser]
+        V[Validator Core]
+        D -.-> P
+        P -.-> V
     end
 
     subgraph PLANEJADO[Pipeline planejado]
-        P[HL7 Parser]
-        V[Validator Core]
         T[HL7 to FHIR Transformer]
         R[Router]
-        L[Audit / Logs]
+        L[Audit / Logs estruturados]
 
-        D -.-> P
-        P -.-> V
         V -.-> T
         T -.-> R
         R -.->|REST FHIR| G
@@ -106,12 +119,12 @@ flowchart LR
 | HIS Simulator / mensagem ADT^A01 | ✅ Implementado |
 | HL7 Inspector | ✅ Implementado |
 | Structural Validator | ✅ Implementado |
+| MLLP Receiver | ✅ Implementado |
+| ACK AA / AE / AR | ✅ Implementado |
 | HAPI FHIR R4 | ✅ Implementado |
 | PostgreSQL / persistência | ✅ Implementado |
-| MLLP Receiver | 🔜 Próximo milestone |
-| ACK / NACK | 🔜 Próximo milestone |
-| HL7 Parser desacoplado | ⏳ Planejado |
-| Validator Core desacoplado | ⏳ Planejado |
+| HL7 Parser desacoplado | 🔜 Próximo milestone |
+| Validator Core desacoplado | 🔜 Próximo milestone |
 | HL7 → FHIR Transformer | ⏳ Planejado |
 | Router | ⏳ Planejado |
 | Audit / Logs estruturados | ⏳ Planejado |
@@ -121,15 +134,18 @@ flowchart LR
 ```text
 HIS Simulator
       |
+      | HL7v2 / TCP / MLLP
       v
-HL7v2 ADT^A01
+MLLP Receiver
       |
-      +--> HL7 Inspector
+      +--> MSH metadata
+      +--> AA / AE / AR
       |
-      `--> Structural Validator
-              |
-              +--> PASS
-              `--> FAIL
+      v
+ACK via MLLP
+      |
+      v
+HIS Simulator
 
 HAPI FHIR R4
       |
@@ -141,22 +157,7 @@ PostgreSQL
 Docker Volume
 ```
 
-> Neste momento, os dois blocos implementados ainda não estão conectados ponta a ponta. A conexão entre origem HL7v2 e destino FHIR será construída progressivamente nos próximos milestones.
-
-### Próximo fluxo — Milestone 1.3
-
-```text
-HIS Simulator
-      |
-      | HL7v2 ADT^A01 / MLLP
-      v
-MLLP Receiver
-      |
-      +--> ACK / NACK
-      |
-      v
-Parser / Validator
-```
+> O fluxo MLLP e o bloco FHIR ainda não estão conectados ponta a ponta. Essa conexão será construída progressivamente nos próximos milestones.
 
 ### Arquitetura alvo do MVP v0.1
 
@@ -171,7 +172,7 @@ MLLP Receiver
 HL7 Parser
       |
       v
-Validator
+Validator Core
       |
       v
 HL7 -> FHIR Transformer
@@ -200,8 +201,8 @@ Todos os componentes críticos
 |---|---|---|
 | MVP v0.1 / 1.1 | Ambiente FHIR local — HAPI FHIR + PostgreSQL | ✅ Concluído |
 | MVP v0.1 / 1.2 | HIS Simulator + HL7v2 ADT^A01 | ✅ Concluído |
-| MVP v0.1 / 1.3 | Transporte MLLP + ACK/NACK | 🔜 Próximo |
-| MVP v0.1 / 1.4 | Parser + Validator HL7v2 | Planejado |
+| MVP v0.1 / 1.3 | Transporte MLLP + ACK/NACK | ✅ Concluído |
+| MVP v0.1 / 1.4 | Parser + Validator HL7v2 | 🔜 Próximo |
 | MVP v0.1 / 1.5 | ADT^A01 → FHIR Patient + Encounter | Planejado |
 | MVP v0.1 / 1.6 | Pipeline end-to-end | Planejado |
 | v0.2 | ORM / ORU → ServiceRequest / Observation / DiagnosticReport | Planejado |
@@ -228,22 +229,26 @@ A regra do projeto é:
 - [Product Vision](docs/product-vision.md)
 - [Arquitetura v0.1](docs/architecture/01-overview.md)
 - [Fluxo ADT^A01 → FHIR](docs/architecture/02-adt-a01-flow.md)
+- [Fluxo MLLP + ACK](docs/architecture/03-mllp-ack-flow.md)
 - [Status do projeto](docs/project-status.md)
 
 ### Implementação
 
 - [01 — Ambiente FHIR local](docs/implementation/01-local-fhir-environment.md)
 - [02 — HIS Simulator + HL7v2 ADT^A01](docs/implementation/02-his-simulator-adt-a01.md)
+- [03 — Transporte MLLP + ACK/NACK](docs/implementation/03-mllp-transport-ack-nack.md)
 
 ### Evidências
 
 - [Validação do ambiente FHIR local](docs/evidence/mvp-v0.1-local-fhir-validation.md)
 - [Validação do HIS Simulator / ADT^A01](docs/evidence/mvp-v0.1-his-simulator-validation.md)
+- [Validação MLLP + ACK/NACK](docs/evidence/mvp-v0.1-mllp-ack-validation.md)
 
 ### Relatórios
 
 - [Milestone 1.1](docs/reports/01-milestone-1.1-summary.md)
 - [Milestone 1.2](docs/reports/02-milestone-1.2-summary.md)
+- [Milestone 1.3](docs/reports/03-milestone-1.3-summary.md)
 
 ### Guia de estudo
 
@@ -285,10 +290,39 @@ python3 src/his-simulator/tools/inspect_hl7.py
 python3 src/his-simulator/tools/validate_adt_a01.py
 ```
 
-Happy path esperado:
+### Executar o MLLP Receiver
+
+```bash
+python3 src/gateway/receivers/mllp_receiver.py
+```
+
+### Enviar a mensagem válida
+
+Em outro terminal:
+
+```bash
+python3 src/his-simulator/tools/send_mllp.py
+```
+
+Resultado esperado:
 
 ```text
-VALIDATION RESULT: PASS
+ACK TYPE: AA - Application Accept
+ACK VALIDATION RESULT: PASS
+```
+
+### Testar AE
+
+```bash
+python3 src/his-simulator/tools/send_mllp.py \
+src/his-simulator/messages/adt_a01_invalid.hl7
+```
+
+### Testar AR
+
+```bash
+python3 src/his-simulator/tools/send_mllp.py \
+src/his-simulator/messages/orm_o01_unsupported.hl7
 ```
 
 ---
@@ -303,30 +337,38 @@ healthcare-interoperability-labs/
 │   ├── docker-compose.yml
 │   └── hapi.application.yaml
 ├── src/
+│   ├── gateway/
+│   │   └── receivers/
+│   │       └── mllp_receiver.py
 │   └── his-simulator/
 │       ├── messages/
-│       │   └── adt_a01.hl7
+│       │   ├── adt_a01.hl7
+│       │   ├── adt_a01_invalid.hl7
+│       │   └── orm_o01_unsupported.hl7
 │       └── tools/
 │           ├── inspect_hl7.py
-│           └── validate_adt_a01.py
+│           ├── validate_adt_a01.py
+│           └── send_mllp.py
 ├── docs/
 │   ├── README.md
 │   ├── product-vision.md
 │   ├── project-status.md
 │   ├── architecture/
 │   │   ├── 01-overview.md
-│   │   └── 02-adt-a01-flow.md
+│   │   ├── 02-adt-a01-flow.md
+│   │   └── 03-mllp-ack-flow.md
 │   ├── implementation/
 │   │   ├── 01-local-fhir-environment.md
-│   │   └── 02-his-simulator-adt-a01.md
+│   │   ├── 02-his-simulator-adt-a01.md
+│   │   └── 03-mllp-transport-ack-nack.md
 │   ├── evidence/
 │   │   ├── mvp-v0.1-local-fhir-validation.md
-│   │   └── mvp-v0.1-his-simulator-validation.md
-│   ├── reports/
-│   │   ├── 01-milestone-1.1-summary.md
-│   │   └── 02-milestone-1.2-summary.md
-│   └── study/
-│       └── intersystems-technical-specialist-interview-guide.md
+│   │   ├── mvp-v0.1-his-simulator-validation.md
+│   │   └── mvp-v0.1-mllp-ack-validation.md
+│   └── reports/
+│       ├── 01-milestone-1.1-summary.md
+│       ├── 02-milestone-1.2-summary.md
+│       └── 03-milestone-1.3-summary.md
 └── assets/
     └── README.md
 ```
@@ -351,6 +393,8 @@ healthcare-interoperability-labs/
 
 - Healthcare IT e interoperabilidade;
 - HL7v2 / ADT^A01;
+- MLLP / TCP sockets;
+- ACK HL7v2 / `MSA`;
 - parsing e validação estrutural;
 - FHIR R4;
 - HAPI FHIR;

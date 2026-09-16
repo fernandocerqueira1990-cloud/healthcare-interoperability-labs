@@ -17,6 +17,7 @@ A documentação é dividida entre a base de estudos já concluída em Google Cl
 
 - [Arquitetura v0.1](architecture/01-overview.md) — visão lógica, responsabilidades dos componentes, baixo acoplamento, observabilidade e desenho do MVP.
 - [Fluxo ADT^A01 → FHIR](architecture/02-adt-a01-flow.md) — fluxo funcional de admissão hospitalar, origem HL7v2 e destino FHIR.
+- [Fluxo MLLP + ACK](architecture/03-mllp-ack-flow.md) — transporte TCP/MLLP, framing, correlação por `MSH-10` e decisão `AA` / `AE` / `AR`.
 
 ---
 
@@ -42,12 +43,24 @@ A documentação é dividida entre a base de estudos já concluída em Google Cl
   - troubleshooting de posição de campos;
   - relação conceitual com FHIR e InterSystems.
 
+- [03 — Transporte MLLP + ACK/NACK](implementation/03-mllp-transport-ack-nack.md)
+  - socket TCP;
+  - framing MLLP;
+  - Receiver na porta 2575;
+  - HIS Simulator MLLP Client;
+  - leitura de `MSH-9` e `MSH-10`;
+  - ACK com `AA`, `AE` e `AR`;
+  - correlação por Message Control ID;
+  - logs operacionais;
+  - troubleshooting de deslocamento de campos no `MSH`.
+
 ---
 
 ## 4. Evidências
 
 - [MVP v0.1 — Validação do Ambiente FHIR Local](evidence/mvp-v0.1-local-fhir-validation.md)
 - [MVP v0.1 — Validação do HIS Simulator / ADT^A01](evidence/mvp-v0.1-his-simulator-validation.md)
+- [MVP v0.1 — Validação MLLP + ACK/NACK](evidence/mvp-v0.1-mllp-ack-validation.md)
 
 Os documentos registram comandos, resultados esperados, resultados observados, interpretação técnica, testes positivos e negativos e troubleshooting.
 
@@ -57,6 +70,7 @@ Os documentos registram comandos, resultados esperados, resultados observados, i
 
 - [Milestone 1.1 — Ambiente FHIR Local](reports/01-milestone-1.1-summary.md)
 - [Milestone 1.2 — HIS Simulator + HL7v2 ADT^A01](reports/02-milestone-1.2-summary.md)
+- [Milestone 1.3 — Transporte MLLP + ACK/NACK](reports/03-milestone-1.3-summary.md)
 
 ---
 
