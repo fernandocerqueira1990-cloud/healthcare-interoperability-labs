@@ -37,6 +37,8 @@ Esses sistemas nem sempre utilizam o mesmo padrão de comunicação. É comum en
 
 O desafio central é permitir que sistemas heterogêneos troquem informações de forma confiável, rastreável e padronizada.
 
+O produto assume que interoperabilidade possui mais de uma dimensão. **Mover bytes entre dois sistemas não é suficiente**: o Gateway deve evoluir do transporte e da estrutura para preservar significado clínico, aplicar regras de conformidade, controlar acesso e oferecer rastreabilidade operacional.
+
 O Healthcare Integration Gateway atuará como uma camada intermediária entre sistemas de origem e destino.
 
 ```text
@@ -155,7 +157,25 @@ error
 retry_count
 ```
 
-### 4.5 Segurança e privacidade
+### 4.5 Modernização progressiva e coexistência
+
+A arquitetura não pressupõe substituição imediata de HL7v2 por FHIR. Os dois padrões atendem responsabilidades diferentes no ecossistema:
+
+- **HL7v2:** mensageria hospitalar orientada a eventos, integrada a sistemas legados e fluxos operacionais consolidados;
+- **FHIR:** recursos modulares, APIs modernas, aplicações, consultas específicas e integração digital.
+
+O Gateway atua como ponte entre essas camadas, reduzindo risco de migrações abruptas e permitindo evolução incremental.
+
+### 4.6 Interoperabilidade estrutural e semântica
+
+O projeto deverá distinguir explicitamente:
+
+- **Structural interoperability:** o dado consegue ser transportado e interpretado estruturalmente;
+- **Semantic interoperability:** origem e destino preservam o mesmo significado clínico.
+
+Terminologias e sistemas de codificação serão incorporados quando o caso de uso exigir semântica compartilhada. O objetivo é evitar mapeamentos meramente sintáticos que produzam FHIR tecnicamente válido, porém clinicamente ambíguo.
+
+### 4.7 Segurança e privacidade
 
 Durante a fase de desenvolvimento serão utilizados dados sintéticos.
 
@@ -284,19 +304,19 @@ Recursos FHIR adicionais:
 
 ### v0.3
 
-REST API Gateway e webhooks.
+FHIR Search, Bundles, REST API Gateway e webhooks.
 
 ### v0.4
 
-Dashboard operacional.
+Terminologias e interoperabilidade semântica; dashboard operacional inicial.
 
 ### v0.5
 
-Configuração multi-cliente.
+FHIR Profiles / Extensions e configuração multi-cliente.
 
 ### v0.6
 
-Observabilidade avançada.
+Analytics e observabilidade avançada.
 
 Possíveis componentes:
 
@@ -306,15 +326,15 @@ Possíveis componentes:
 
 ### v0.7
 
-Fluxos DICOM / DICOMweb.
+SMART on FHIR para acesso seguro de aplicações: OAuth 2.0, scopes e launch contexts.
 
 ### v0.8
 
-Rules Engine para roteamento e transformação configurável.
+Fluxos DICOM / DICOMweb e Rules Engine para roteamento e transformação configurável.
 
 ### v0.9
 
-Assistente de troubleshooting com IA para triagem de falhas de mensagens HL7/FHIR.
+Simulação de HIE / troca entre organizações, observabilidade avançada e assistente de troubleshooting com IA para triagem de falhas HL7/FHIR.
 
 ### v1.0
 
