@@ -6,6 +6,17 @@ A arquitetura documentada neste repositório demonstra como integrar dados clín
 
 Uma das trilhas parte do **HL7v2**, formato ainda muito presente em HIS, LIS, RIS e sistemas de prontuário, até o **FHIR**, padrão baseado em recursos e APIs REST. A outra trata imagens no padrão **DICOM**, conectando PACS/RIS à camada analítica por meio da exportação de metadados.
 
+O desenho adota uma estratégia de **modernização progressiva com suporte ao legado**. HL7v2 permanece como mecanismo de mensageria orientada a eventos no ambiente hospitalar; FHIR é introduzido como camada moderna de representação e acesso aos dados. O objetivo não é trocar um padrão pelo outro de forma abrupta, mas criar uma arquitetura onde ambos coexistam com responsabilidades claras.
+
+### Quatro camadas de interoperabilidade consideradas
+
+1. **Transport:** como o dado chega — por exemplo TCP/MLLP, HTTP/REST ou DICOMweb.
+2. **Structure:** como o dado é organizado — segmentos HL7v2, resources FHIR, objetos DICOM.
+3. **Semantics:** como o significado clínico é preservado — terminologias, códigos e mapeamentos consistentes.
+4. **Access & Governance:** como aplicações e organizações acessam e compartilham o dado — APIs, autorização, Profiles, políticas e auditoria.
+
+Essa separação reduz acoplamento e evita tratar "mensagem recebida" como sinônimo de "interoperabilidade concluída".
+
 ```mermaid
 flowchart TD
     A["Sistemas de origem<br/>HIS · EHR · LIS · RIS"] --> B["Mensagens HL7v2"]
@@ -66,3 +77,53 @@ No laboratório, o adaptador foi executado localmente em Docker para validar o f
 Hospitais raramente possuem um único sistema. A informação transita entre atendimento, laboratório, imagem, faturamento, prescrição e sistemas de apoio. Uma arquitetura orientada a eventos e padrões reduz acoplamento, facilita evolução gradual e melhora a disponibilidade das integrações.
 
 O modelo não substitui automaticamente os sistemas assistenciais existentes. Ele cria uma camada de interoperabilidade para que dados clínicos possam circular com mais consistência, rastreabilidade e capacidade de uso.
+
+
+## Arquitetura evolutiva do Healthcare Integration Gateway
+
+A implementação local evolui em milestones independentes. O fluxo principal será:
+
+```text
+HIS / LIS / EHR
+      |
+      | HL7v2 / MLLP
+      v
+MLLP Receiver
+      |
+      v
+HL7 Parser
+      |
+      v
+Validator Core
+      |
+      v
+HL7 -> FHIR Transformer
+      |
+      v
+FHIR R4 Server
+      |
+      +--> FHIR Search / Bundle
+      +--> Analytics / BI
+      +--> Applications
+      +--> Future SMART on FHIR
+```
+
+### Evolução semântica
+
+A transformação de HL7v2 para FHIR resolve principalmente estrutura e representação. A etapa seguinte deve tratar **semantic interoperability** por meio de terminologias e mapeamentos consistentes. Exemplos planejados incluem LOINC para observações laboratoriais, SNOMED CT para conceitos clínicos e classificações diagnósticas quando aplicáveis.
+
+### Profiles e Extensions
+
+Profiles e Extensions serão introduzidos somente depois do fluxo FHIR básico estar funcional e validado. A intenção é evitar customizações prematuras e documentar claramente por que cada restrição ou extensão existe.
+
+### SMART on FHIR
+
+SMART on FHIR será tratado como camada posterior de acesso seguro a aplicações, adicionando OAuth 2.0, scopes e launch contexts sobre uma API FHIR já funcional. Segurança de aplicação não deve ser confundida com transformação de dados.
+
+### HIE e troca entre organizações
+
+A simulação de HIE é uma etapa futura. Ela exige mais do que conectividade: identidade, confiança, governança, consentimento, políticas de acesso, auditoria e interoperabilidade semântica. Por isso será construída somente após estabilização do core de integração.
+
+### DICOM como pipeline paralelo
+
+DICOM/DICOMweb permanece como trilha paralela. Imagens médicas não serão transformadas em FHIR de forma simplista; o projeto tratará imagem e contexto clínico como domínios relacionados, mas com responsabilidades técnicas distintas.
