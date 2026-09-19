@@ -9,6 +9,35 @@ Este repositório reúne duas frentes complementares:
 
 > Todos os exemplos públicos usam dados fictícios ou sintéticos.
 
+### Modelo conceitual do projeto
+
+O projeto parte de uma premissa arquitetural importante: **modernizar o acesso aos dados sem assumir a substituição imediata dos sistemas hospitalares legados**.
+
+```text
+Legacy Healthcare Systems
+HIS / EHR / LIS / RIS
+        |
+        | HL7v2 / MLLP
+        v
+Healthcare Integration Gateway
+        |
+        | parse -> validate -> transform -> route
+        v
+FHIR R4 Resources / REST API
+        |
+        +--> Applications / Patient-facing APIs
+        +--> Analytics / BI / AI
+        +--> Future SMART on FHIR access
+
+PACS / RIS
+        |
+        | DICOM / DICOMweb
+        v
+Imaging interoperability pipeline
+```
+
+A estratégia é de **coexistência e modernização progressiva**: HL7v2 continua atendendo mensageria hospitalar consolidada, enquanto FHIR fornece representação modular e acesso moderno via API. DICOM/DICOMweb permanece como trilha paralela para imagens médicas. Terminologias, Profiles, segurança, analytics e troca entre organizações são incorporados em camadas posteriores, quando houver fundamento técnico para cada evolução.
+
 ---
 
 ## Status atual
@@ -206,14 +235,14 @@ Todos os componentes críticos
 | MVP v0.1 / 1.5 | ADT^A01 → FHIR Patient + Encounter | Planejado |
 | MVP v0.1 / 1.6 | Pipeline end-to-end | Planejado |
 | v0.2 | ORM / ORU → ServiceRequest / Observation / DiagnosticReport | Planejado |
-| v0.3 | REST API Gateway e webhooks | Planejado |
-| v0.4 | Dashboard operacional | Planejado |
-| v0.5 | Configuração multi-cliente | Planejado |
-| v0.6 | Observabilidade avançada | Planejado |
-| v0.7 | DICOM / DICOMweb | Planejado |
-| v0.8 | Rules Engine | Planejado |
-| v0.9 | Assistente de troubleshooting com IA | Planejado |
-| v1.0 | Piloto controlado / plataforma de referência | Futuro |
+| v0.3 | FHIR Search, Bundle e API-oriented access | Planejado |
+| v0.4 | Terminologias e interoperabilidade semântica — LOINC / SNOMED CT / ICD | Planejado |
+| v0.5 | Profiles, Extensions e validação de conformidade | Planejado |
+| v0.6 | Analytics / BI / dados computáveis | Planejado |
+| v0.7 | SMART on FHIR — OAuth 2.0, scopes e launch contexts | Planejado |
+| v0.8 | DICOM / DICOMweb e correlação com contexto clínico | Planejado |
+| v0.9 | HIE simulation / cross-organization exchange + observabilidade avançada | Planejado |
+| v1.0 | Piloto controlado / plataforma de referência, com Rules Engine e troubleshooting assistido por IA | Futuro |
 
 ---
 
@@ -385,7 +414,11 @@ healthcare-interoperability-labs/
 - validação incremental;
 - documentação junto com código;
 - troubleshooting documentado;
-- observabilidade como requisito arquitetural.
+- observabilidade como requisito arquitetural;
+- separação entre **transporte, estrutura, semântica e acesso**;
+- evolução incremental: primeiro interoperabilidade estrutural confiável, depois semântica e governança;
+- coexistência entre integrações HL7v2 legadas e APIs FHIR modernas, evitando migrações "big bang";
+- Profiles, Extensions e terminologias somente quando houver caso de uso, regra de negócio e governança definidos.
 
 ---
 
