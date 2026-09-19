@@ -7,7 +7,8 @@ O projeto está na fase **MVP v0.1**.
 - **Milestone 1.1 — Ambiente FHIR Local:** ✅ concluído e validado.
 - **Milestone 1.2 — HIS Simulator + HL7v2 ADT^A01:** ✅ concluído e validado.
 - **Milestone 1.3 — Transporte MLLP + ACK/NACK:** ✅ concluído e validado.
-- **Milestone 1.4 — HL7 Parser + Validator Core desacoplados:** 🔜 próximo passo.
+- **Milestone 1.4 — HL7 Parser + Validator Core desacoplados:** ✅ concluído e validado.
+- **Milestone 1.5 — ADT^A01 → FHIR Patient + Encounter:** 🔜 próximo passo.
 
 ---
 
@@ -200,26 +201,78 @@ PostgreSQL
 
 ---
 
-## Próximo milestone
+## Milestone 1.4 — HL7 Parser + Validator Core desacoplados
 
-### Milestone 1.4 — HL7 Parser + Validator Core desacoplados
+### Objetivo
 
-Objetivos:
+Separar transporte, parsing e validação para reduzir acoplamento, permitir testes isolados e preparar o pipeline de transformação HL7v2 → FHIR.
 
-1. extrair parsing HL7v2 do MLLP Receiver;
-2. criar parser reutilizável;
-3. criar Validator Core independente do transporte;
-4. reutilizar e evoluir as validações do Milestone 1.2;
-5. manter decisão de ACK baseada no resultado do pipeline;
-6. ampliar testes unitários/negativos;
-7. preparar o caminho para o Transformer HL7 → FHIR.
+### Implementado
 
-Fluxo alvo:
+- `src/gateway/core/hl7_parser.py`;
+- `ParsedHL7Message` como representação interna previsível;
+- normalização de quebras de segmento;
+- parsing específico de `MSH-1` e `MSH-2`;
+- uso do separador definido em `MSH-1` nos demais segmentos;
+- `src/gateway/core/hl7_validator.py`;
+- `ValidationResult` com `valid`, `ack_code`, `reason` e `errors`;
+- Receiver refatorado para transporte/orquestração;
+- suíte automatizada em `tests/gateway/test_hl7_core.py`.
+
+### Matriz validada
+
+```text
+ADT^A01 válido          -> AA -> PASS
+ADT^A01 sem MSH-10      -> AE -> PASS
+ORM^O01 não suportado   -> AR -> PASS
+```
+
+### Testes automatizados
+
+```text
+[x] ADT^A01 válido retorna AA
+[x] MSH-10 ausente retorna AE
+[x] ORM^O01 não suportado retorna AR
+[x] segmentos MSH/EVN/PID/PV1 expostos pelo Parser
+[x] mensagem vazia gera erro controlado
+[x] mensagem sem MSH gera erro controlado
+
+Ran 6 tests
+OK
+```
+
+### Troubleshooting
+
+Após o desacoplamento, a execução direta do arquivo:
+
+```bash
+python3 src/gateway/receivers/mllp_receiver.py
+```
+
+resultou em:
+
+```text
+ModuleNotFoundError: No module named 'src'
+```
+
+A causa foi o contexto de importação do Python ao executar um arquivo interno diretamente. A execução foi padronizada como módulo:
+
+```bash
+python3 -m src.gateway.receivers.mllp_receiver
+```
+
+Com isso, os imports absolutos do pacote `src` passaram a ser resolvidos corretamente.
+
+### Known limitation
+
+A estrutura atual armazena segmentos por nome em um dicionário. Segmentos repetidos, como múltiplos `OBX`, ainda não são preservados como coleção. Essa limitação não afeta o ADT^A01 atual e será tratada antes da evolução para ORM/ORU.
+
+### Fluxo implementado após o Milestone 1.4
 
 ```text
 HIS Simulator
       |
-      | MLLP
+      | HL7v2 / MLLP
       v
 MLLP Receiver
       |
@@ -229,10 +282,43 @@ HL7 Parser
       v
 Validator Core
       |
-      +--> ACK decision
+      +--> AA / AE / AR
       |
       v
-Transformer (Milestone 1.5)
+ACK via MLLP
+```
+
+---
+
+## Próximo milestone
+
+### Milestone 1.5 — ADT^A01 → FHIR Patient + Encounter
+
+Objetivos:
+
+1. mapear dados de `PID` para `Patient`;
+2. mapear dados de `PV1` para `Encounter`;
+3. produzir resources FHIR R4 válidos;
+4. manter rastreabilidade entre mensagem de origem e resources gerados;
+5. preparar envio ao HAPI FHIR;
+6. criar testes automatizados para transformação.
+
+Fluxo alvo:
+
+```text
+HL7 Parser
+      |
+      v
+Validator Core
+      |
+      v
+ADT^A01 -> FHIR Transformer
+      |
+      +--> Patient
+      +--> Encounter
+      |
+      v
+HAPI FHIR R4
 ```
 
 ---
