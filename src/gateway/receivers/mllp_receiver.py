@@ -1,8 +1,10 @@
 import logging
 import os
-import re
 import socket
 from datetime import datetime
+
+from src.gateway.core.hl7_parser import parse_message
+from src.gateway.core.hl7_validator import validate_message
 
 
 HOST = os.getenv("MLLP_HOST", "127.0.0.1")
@@ -54,60 +56,22 @@ def extract_mllp_message(buffer: bytes):
     return message, remaining_buffer
 
 
-def get_msh_segment(message: str):
-    segments = re.split(r"\r\n|\r|\n", message)
-
-    for segment in segments:
-        if segment.startswith("MSH"):
-            return segment
-
-    raise ValueError("MSH segment not found")
-
-
-def parse_msh(message: str):
-    msh = get_msh_segment(message)
-
-    if len(msh) < 4:
-        raise ValueError("Invalid MSH segment")
-
-    field_separator = msh[3]
-    fields = msh.split(field_separator)
-
-    if len(fields) < 12:
-        raise ValueError("Incomplete MSH segment")
-
-    return {
-        "field_separator": field_separator,
-        "encoding_characters": fields[1],
-        "sending_application": fields[2],
-        "sending_facility": fields[3],
-        "receiving_application": fields[4],
-        "receiving_facility": fields[5],
-        "message_type": fields[8],
-        "message_control_id": fields[9],
-        "processing_id": fields[10],
-        "version": fields[11],
-    }
-
-
 def build_ack(
-    original_message: str,
+    parsed_message,
     acknowledgement_code: str = "AA",
     acknowledgement_text: str = "Message accepted",
 ):
-    metadata = parse_msh(original_message)
+    msh = parsed_message.segments["MSH"]
 
-    separator = metadata["field_separator"]
-    message_type = metadata["message_type"]
-    message_control_id = metadata["message_control_id"]
+    separator = msh.get(1, "|")
+    encoding_characters = msh.get(2, "^~\\&")
 
-    trigger_event = ""
+    sending_application = msh.get(3, "")
+    sending_facility = msh.get(4, "")
+    receiving_application = msh.get(5, "")
+    receiving_facility = msh.get(6, "")
 
-    if "^" in message_type:
-        parts = message_type.split("^")
-
-        if len(parts) > 1:
-            trigger_event = parts[1]
+    trigger_event = parsed_message.trigger_event
 
     ack_message_type = (
         f"ACK^{trigger_event}"
@@ -116,98 +80,72 @@ def build_ack(
     )
 
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    ack_control_id = "ACK" + datetime.now().strftime("%Y%m%d%H%M%S%f")
+
+    ack_control_id = (
+        "ACK"
+        + datetime.now().strftime("%Y%m%d%H%M%S%f")
+    )
 
     msh_fields = [
         "MSH",
-        metadata["encoding_characters"],
-        metadata["receiving_application"],
-        metadata["receiving_facility"],
-        metadata["sending_application"],
-        metadata["sending_facility"],
+        encoding_characters,
+        receiving_application,
+        receiving_facility,
+        sending_application,
+        sending_facility,
         timestamp,
         "",
         ack_message_type,
         ack_control_id,
-        metadata["processing_id"],
-        metadata["version"],
+        parsed_message.processing_id,
+        parsed_message.version_id,
     ]
 
-    msh = separator.join(msh_fields)
+    ack_msh = separator.join(msh_fields)
 
     msa_fields = [
         "MSA",
         acknowledgement_code,
-        message_control_id,
+        parsed_message.message_control_id,
         acknowledgement_text,
     ]
 
     msa = separator.join(msa_fields)
 
-    return f"{msh}\r{msa}\r"
+    return f"{ack_msh}\r{msa}\r"
 
 
 def handle_message(message: str):
-    metadata = parse_msh(message)
-
-    message_type = metadata["message_type"]
-    message_control_id = metadata["message_control_id"]
+    parsed = parse_message(message)
 
     logger.info(
         "HL7 received | type=%s | control_id=%s",
-        message_type,
-        message_control_id or "<missing>",
+        parsed.message_type or "<missing>",
+        parsed.message_control_id or "<missing>",
     )
 
-    if not message_control_id:
-        logger.error(
-            "HL7 validation failed | reason=missing MSH-10"
-        )
+    validation = validate_message(parsed)
 
-        ack = build_ack(
-            original_message=message,
-            acknowledgement_code="AE",
-            acknowledgement_text="Missing Message Control ID",
-        )
-
-        logger.info(
-            "ACK generated | code=AE | correlation_id=<missing>"
-        )
-
-        return ack
-
-    if message_type != "ADT^A01":
-        logger.error(
-            "HL7 rejected | reason=unsupported message type | type=%s",
-            message_type,
-        )
-
-        ack = build_ack(
-            original_message=message,
-            acknowledgement_code="AR",
-            acknowledgement_text="Unsupported message type",
-        )
-
-        logger.info(
-            "ACK generated | code=AR | correlation_id=%s",
-            message_control_id,
-        )
-
-        return ack
+    if validation.errors:
+        for error in validation.errors:
+            logger.error(
+                "HL7 validation error | %s",
+                error,
+            )
 
     ack = build_ack(
-        original_message=message,
-        acknowledgement_code="AA",
-        acknowledgement_text="Message accepted",
+        parsed_message=parsed,
+        acknowledgement_code=validation.ack_code,
+        acknowledgement_text=validation.reason,
     )
 
     logger.info(
-        "ACK generated | code=AA | correlation_id=%s",
-        message_control_id,
+        "ACK generated | code=%s | correlation_id=%s",
+        validation.ack_code,
+        parsed.message_control_id or "<missing>",
     )
 
     return ack
-
 
 def run_server():
     logger.info(
