@@ -266,6 +266,7 @@ A regra do projeto é:
 - [01 — Ambiente FHIR local](docs/implementation/01-local-fhir-environment.md)
 - [02 — HIS Simulator + HL7v2 ADT^A01](docs/implementation/02-his-simulator-adt-a01.md)
 - [03 — Transporte MLLP + ACK/NACK](docs/implementation/03-mllp-transport-ack-nack.md)
+- [04 — HL7 Parser + Validator Core — design do Milestone 1.4](docs/implementation/04-hl7-parser-validator-core.md)
 
 ### Evidências
 
