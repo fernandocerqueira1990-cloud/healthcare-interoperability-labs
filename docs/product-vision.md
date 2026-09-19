@@ -155,7 +155,15 @@ error
 retry_count
 ```
 
-### 4.5 Segurança e privacidade
+### 4.5 Modernização progressiva e coexistência
+
+O projeto não pressupõe substituição imediata de HL7v2 por FHIR. HL7v2 permanece adequado à mensageria hospitalar orientada a eventos; FHIR é usado como representação modular e acesso moderno via API. O Gateway atua como ponte entre essas camadas.
+
+### 4.6 Interoperabilidade estrutural e semântica
+
+O projeto distingue a capacidade de transportar/interpretar a estrutura do dado da capacidade de preservar seu significado clínico. Terminologias, Profiles e regras de conformidade serão adicionados progressivamente, após estabilização do pipeline base.
+
+### 4.7 Segurança e privacidade
 
 Durante a fase de desenvolvimento serão utilizados dados sintéticos.
 

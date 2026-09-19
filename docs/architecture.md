@@ -66,3 +66,44 @@ No laboratório, o adaptador foi executado localmente em Docker para validar o f
 Hospitais raramente possuem um único sistema. A informação transita entre atendimento, laboratório, imagem, faturamento, prescrição e sistemas de apoio. Uma arquitetura orientada a eventos e padrões reduz acoplamento, facilita evolução gradual e melhora a disponibilidade das integrações.
 
 O modelo não substitui automaticamente os sistemas assistenciais existentes. Ele cria uma camada de interoperabilidade para que dados clínicos possam circular com mais consistência, rastreabilidade e capacidade de uso.
+
+
+## Arquitetura evolutiva do Healthcare Integration Gateway
+
+O produto adota modernização progressiva: HL7v2 continua como mensageria hospitalar consolidada e FHIR entra como camada moderna de representação e acesso por API. O objetivo não é uma substituição abrupta, mas coexistência com responsabilidades claras.
+
+### Camadas consideradas
+
+1. **Transport** — TCP/MLLP, HTTP/REST, DICOMweb;
+2. **Structure** — segmentos HL7v2, resources FHIR, objetos DICOM;
+3. **Semantics** — terminologias, códigos e mapeamentos consistentes;
+4. **Access & Governance** — APIs, autorização, Profiles, políticas e auditoria.
+
+No estado atual do MVP, o fluxo local é:
+
+```text
+HIS Simulator
+      |
+      | HL7v2 / MLLP
+      v
+MLLP Receiver
+      |
+      v
+HL7 Parser
+      |
+      v
+Validator Core
+      |
+      +--> ACK AA / AE / AR
+      |
+      v
+HL7 -> FHIR Transformer (Milestone 1.5)
+      |
+      +--> Patient
+      +--> Encounter
+      |
+      v
+HAPI FHIR R4
+```
+
+O DICOM/DICOMweb permanece como pipeline paralelo para imagens médicas. A transformação HL7v2 → FHIR resolve estrutura e representação; terminologias e interoperabilidade semântica serão aprofundadas em etapas posteriores.

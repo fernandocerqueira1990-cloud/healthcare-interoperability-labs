@@ -54,6 +54,16 @@ A documentação é dividida entre a base de estudos já concluída em Google Cl
   - logs operacionais;
   - troubleshooting de deslocamento de campos no `MSH`.
 
+- [04 — HL7 Parser + Validator Core](implementation/04-hl7-parser-validator-core.md)
+  - `ParsedHL7Message`;
+  - separação transporte / parsing / validação;
+  - `MSH-1` como field separator;
+  - `ValidationResult`;
+  - AA / AE / AR preservados;
+  - 6 testes automatizados;
+  - troubleshooting de execução como módulo;
+  - limitação conhecida de segmentos repetidos.
+
 ---
 
 ## 4. Evidências
@@ -61,6 +71,7 @@ A documentação é dividida entre a base de estudos já concluída em Google Cl
 - [MVP v0.1 — Validação do Ambiente FHIR Local](evidence/mvp-v0.1-local-fhir-validation.md)
 - [MVP v0.1 — Validação do HIS Simulator / ADT^A01](evidence/mvp-v0.1-his-simulator-validation.md)
 - [MVP v0.1 — Validação MLLP + ACK/NACK](evidence/mvp-v0.1-mllp-ack-validation.md)
+- [MVP v0.1 — Validação HL7 Parser + Validator Core](evidence/mvp-v0.1-hl7-parser-validator-validation.md)
 
 Os documentos registram comandos, resultados esperados, resultados observados, interpretação técnica, testes positivos e negativos e troubleshooting.
 
@@ -71,6 +82,7 @@ Os documentos registram comandos, resultados esperados, resultados observados, i
 - [Milestone 1.1 — Ambiente FHIR Local](reports/01-milestone-1.1-summary.md)
 - [Milestone 1.2 — HIS Simulator + HL7v2 ADT^A01](reports/02-milestone-1.2-summary.md)
 - [Milestone 1.3 — Transporte MLLP + ACK/NACK](reports/03-milestone-1.3-summary.md)
+- [Milestone 1.4 — HL7 Parser + Validator Core](reports/04-milestone-1.4-summary.md)
 
 ---
 

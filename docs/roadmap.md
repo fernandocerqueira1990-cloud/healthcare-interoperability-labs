@@ -1,4 +1,4 @@
-# Roadmap de aprendizado
+# Roadmap técnico e de aprendizado
 
 ## Trilha concluída
 
@@ -59,3 +59,23 @@ Ao concluir a trilha, o portfólio cobrirá as três modalidades principais de d
 4. qualidade de dados, reprocessamento e idempotência;
 5. dashboards de integração e indicadores operacionais;
 6. arquitetura híbrida entre datacenter hospitalar e cloud.
+
+
+## Roadmap do Healthcare Integration Gateway
+
+| Fase | Objetivo técnico | Status |
+|---|---|---|
+| Transport | HL7v2 sobre TCP/MLLP | ✅ Concluído |
+| Processing | Parser + Validator Core desacoplados | ✅ Concluído |
+| Transformation | ADT^A01 → FHIR Patient + Encounter | 🔜 Próximo |
+| FHIR Access | REST, Search e Bundle | Planejado |
+| Semantic Interoperability | LOINC / SNOMED CT / mapeamentos | Planejado |
+| Conformance | Profiles, Extensions e validação | Planejado |
+| Analytics | Dados estruturados para BI/AI | Planejado |
+| Secure App Access | SMART on FHIR | Planejado |
+| Imaging | DICOM / DICOMweb | Planejado |
+| Cross-org Exchange | HIE simulation | Planejado |
+
+### Regra de progressão
+
+Cada camada deve ser funcional, testada, reproduzível e documentada antes da seguinte. A prioridade é reduzir acoplamento e dívida técnica, não adicionar componentes sem necessidade arquitetural.

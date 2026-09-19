@@ -13,7 +13,7 @@ Este repositório reúne duas frentes complementares:
 
 ## Status atual
 
-**MVP v0.1 — Milestones 1.1, 1.2 e 1.3 concluídos e validados**
+**MVP v0.1 — Milestones 1.1, 1.2, 1.3 e 1.4 concluídos e validados**
 
 ### ✅ Milestone 1.1 — Ambiente FHIR Local
 
@@ -53,15 +53,26 @@ Este repositório reúne duas frentes complementares:
 - testes positivos e negativos;
 - troubleshooting de delimitador adicional no `MSH`.
 
-### 🔜 Próximo: Milestone 1.4 — HL7 Parser + Validator Core desacoplados
+### ✅ Milestone 1.4 — HL7 Parser + Validator Core desacoplados
+
+- `ParsedHL7Message` como contrato interno do core;
+- Parser HL7 reutilizável e independente do transporte;
+- tratamento específico de `MSH-1` / `MSH-2`;
+- separador de campos propagado a partir de `MSH-1`;
+- Validator Core independente de socket/MLLP;
+- decisão estruturada de `AA`, `AE` e `AR`;
+- Receiver refatorado para transporte + orquestração;
+- 6 testes automatizados de regressão;
+- testes ponta a ponta MLLP preservados sem regressão.
+
+### 🔜 Próximo: Milestone 1.5 — ADT^A01 → FHIR Patient + Encounter
 
 Objetivos:
 
-- retirar parsing HL7 do Receiver;
-- criar parser reutilizável;
-- criar Validator Core independente do transporte;
-- reaproveitar e evoluir as validações do Milestone 1.2;
-- preparar o pipeline para transformação HL7v2 → FHIR.
+- mapear `PID` para `Patient`;
+- mapear `PV1` para `Encounter`;
+- manter rastreabilidade entre mensagem HL7 e resources FHIR;
+- validar payloads FHIR R4 antes do envio ao HAPI FHIR.
 
 ---
 
@@ -123,8 +134,8 @@ flowchart LR
 | ACK AA / AE / AR | ✅ Implementado |
 | HAPI FHIR R4 | ✅ Implementado |
 | PostgreSQL / persistência | ✅ Implementado |
-| HL7 Parser desacoplado | 🔜 Próximo milestone |
-| Validator Core desacoplado | 🔜 Próximo milestone |
+| HL7 Parser desacoplado | ✅ Implementado |
+| Validator Core desacoplado | ✅ Implementado |
 | HL7 → FHIR Transformer | ⏳ Planejado |
 | Router | ⏳ Planejado |
 | Audit / Logs estruturados | ⏳ Planejado |
@@ -202,7 +213,7 @@ Todos os componentes críticos
 | MVP v0.1 / 1.1 | Ambiente FHIR local — HAPI FHIR + PostgreSQL | ✅ Concluído |
 | MVP v0.1 / 1.2 | HIS Simulator + HL7v2 ADT^A01 | ✅ Concluído |
 | MVP v0.1 / 1.3 | Transporte MLLP + ACK/NACK | ✅ Concluído |
-| MVP v0.1 / 1.4 | Parser + Validator HL7v2 | 🔜 Próximo |
+| MVP v0.1 / 1.4 | Parser + Validator HL7v2 | ✅ Concluído |
 | MVP v0.1 / 1.5 | ADT^A01 → FHIR Patient + Encounter | Planejado |
 | MVP v0.1 / 1.6 | Pipeline end-to-end | Planejado |
 | v0.2 | ORM / ORU → ServiceRequest / Observation / DiagnosticReport | Planejado |
@@ -237,18 +248,21 @@ A regra do projeto é:
 - [01 — Ambiente FHIR local](docs/implementation/01-local-fhir-environment.md)
 - [02 — HIS Simulator + HL7v2 ADT^A01](docs/implementation/02-his-simulator-adt-a01.md)
 - [03 — Transporte MLLP + ACK/NACK](docs/implementation/03-mllp-transport-ack-nack.md)
+- [04 — HL7 Parser + Validator Core](docs/implementation/04-hl7-parser-validator-core.md)
 
 ### Evidências
 
 - [Validação do ambiente FHIR local](docs/evidence/mvp-v0.1-local-fhir-validation.md)
 - [Validação do HIS Simulator / ADT^A01](docs/evidence/mvp-v0.1-his-simulator-validation.md)
 - [Validação MLLP + ACK/NACK](docs/evidence/mvp-v0.1-mllp-ack-validation.md)
+- [Validação do HL7 Parser + Validator Core](docs/evidence/mvp-v0.1-hl7-parser-validator-validation.md)
 
 ### Relatórios
 
 - [Milestone 1.1](docs/reports/01-milestone-1.1-summary.md)
 - [Milestone 1.2](docs/reports/02-milestone-1.2-summary.md)
 - [Milestone 1.3](docs/reports/03-milestone-1.3-summary.md)
+- [Milestone 1.4](docs/reports/04-milestone-1.4-summary.md)
 
 ### Guia de estudo
 
@@ -293,8 +307,10 @@ python3 src/his-simulator/tools/validate_adt_a01.py
 ### Executar o MLLP Receiver
 
 ```bash
-python3 src/gateway/receivers/mllp_receiver.py
+python3 -m src.gateway.receivers.mllp_receiver
 ```
+
+> O Receiver é executado como módulo para que os imports internos do pacote `src` sejam resolvidos de forma consistente.
 
 ### Enviar a mensagem válida
 
@@ -338,6 +354,10 @@ healthcare-interoperability-labs/
 │   └── hapi.application.yaml
 ├── src/
 │   ├── gateway/
+│   │   ├── core/
+│   │   │   ├── __init__.py
+│   │   │   ├── hl7_parser.py
+│   │   │   └── hl7_validator.py
 │   │   └── receivers/
 │   │       └── mllp_receiver.py
 │   └── his-simulator/
@@ -368,7 +388,11 @@ healthcare-interoperability-labs/
 │   └── reports/
 │       ├── 01-milestone-1.1-summary.md
 │       ├── 02-milestone-1.2-summary.md
-│       └── 03-milestone-1.3-summary.md
+│       ├── 03-milestone-1.3-summary.md
+│       └── 04-milestone-1.4-summary.md
+├── tests/
+│   └── gateway/
+│       └── test_hl7_core.py
 └── assets/
     └── README.md
 ```
