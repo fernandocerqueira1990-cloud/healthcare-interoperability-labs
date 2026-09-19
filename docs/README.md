@@ -114,3 +114,8 @@ Cada nova fase deve registrar, sempre que aplicável:
 12. próximos passos.
 
 A intenção é que o repositório sirva simultaneamente como documentação de engenharia, material de estudo, portfólio técnico e base de evolução para um produto real.
+
+
+## Milestone em andamento
+
+- [04 — HL7 Parser + Validator Core](implementation/04-hl7-parser-validator-core.md) — decisão arquitetural, contratos, regras iniciais, estratégia de testes e critérios de conclusão do Milestone 1.4.
