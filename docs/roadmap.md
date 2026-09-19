@@ -1,4 +1,4 @@
-# Roadmap de aprendizado
+# Roadmap técnico e de aprendizado
 
 ## Trilha concluída
 
@@ -59,3 +59,25 @@ Ao concluir a trilha, o portfólio cobrirá as três modalidades principais de d
 4. qualidade de dados, reprocessamento e idempotência;
 5. dashboards de integração e indicadores operacionais;
 6. arquitetura híbrida entre datacenter hospitalar e cloud.
+
+
+## Roadmap do Healthcare Integration Gateway
+
+A sequência abaixo conecta o aprendizado dos laboratórios à implementação do produto. Cada etapa deve produzir código, testes, documentação, evidências e troubleshooting antes do avanço.
+
+| Fase | Objetivo técnico | Resultado esperado |
+|---|---|---|
+| 1. Transport | HL7v2 sobre TCP/MLLP | Recepção confiável, framing e ACK/NACK correlacionado |
+| 2. Processing | Parser e Validator Core desacoplados | Mensagem interpretada sem dependência do Receiver |
+| 3. Transformation | ADT^A01 → FHIR R4 | `Patient` e `Encounter` consistentes |
+| 4. FHIR Access | REST, Search e Bundle | Consulta modular de resources por API |
+| 5. Semantic Interoperability | Terminologias e mapeamentos | Significado clínico preservado entre origem e destino |
+| 6. Conformance | Profiles, Extensions e validação | Regras explícitas e verificáveis por caso de uso |
+| 7. Analytics | Dados estruturados e computáveis | BI, indicadores e base para casos de AI/ML |
+| 8. Secure App Access | SMART on FHIR | OAuth 2.0, scopes e launch contexts |
+| 9. Imaging | DICOM / DICOMweb | Pipeline de imagem correlacionado ao contexto clínico |
+| 10. Cross-org Exchange | Simulação de HIE | Troca entre organizações com governança e auditoria |
+
+### Regra de progressão
+
+A prioridade não é adicionar tecnologias rapidamente. A prioridade é comprovar, em cada milestone, **responsabilidade arquitetural, baixo acoplamento, teste reproduzível e rastreabilidade**. Uma nova camada só entra quando a anterior estiver funcional, compreendida e documentada.
