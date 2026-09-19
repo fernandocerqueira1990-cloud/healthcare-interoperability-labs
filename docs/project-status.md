@@ -200,6 +200,32 @@ PostgreSQL
 
 ---
 
+## Direção arquitetural consolidada
+
+O estado atual prova duas capacidades independentes: transporte HL7v2/MLLP com ACK e persistência FHIR local. O próximo ciclo conecta essas capacidades gradualmente, sem acoplar transporte à lógica clínica.
+
+A linha evolutiva adotada é:
+
+```text
+HL7v2 / MLLP
+      ↓
+Parser
+      ↓
+Validator
+      ↓
+FHIR Transformation
+      ↓
+FHIR REST / Search
+      ↓
+Semantic interoperability
+      ↓
+Profiles / Security / Analytics
+```
+
+Essa ordem é intencional: primeiro garantir transporte e estrutura; depois significado, conformidade, acesso seguro e usos analíticos.
+
+---
+
 ## Próximo milestone
 
 ### Milestone 1.4 — HL7 Parser + Validator Core desacoplados
@@ -212,7 +238,10 @@ Objetivos:
 4. reutilizar e evoluir as validações do Milestone 1.2;
 5. manter decisão de ACK baseada no resultado do pipeline;
 6. ampliar testes unitários/negativos;
-7. preparar o caminho para o Transformer HL7 → FHIR.
+7. preparar o caminho para o Transformer HL7 → FHIR;
+8. preservar no Receiver apenas responsabilidades de transporte MLLP;
+9. definir contratos de entrada/saída claros entre Receiver, Parser e Validator;
+10. produzir testes reproduzíveis para happy path, mensagem incompleta e mensagem não suportada.
 
 Fluxo alvo:
 
