@@ -64,6 +64,16 @@ A documentação é dividida entre a base de estudos já concluída em Google Cl
   - troubleshooting de execução como módulo;
   - limitação conhecida de segmentos repetidos.
 
+- [05 — ADT^A01 → FHIR Patient + Encounter](implementation/05-adt-a01-fhir-patient-encounter.md)
+  - mapping `PID → Patient`;
+  - mapping `PV1 → Encounter`;
+  - FHIR Client;
+  - ADT A01 Service;
+  - vínculo real `Encounter.subject.reference`;
+  - integração com MLLP Receiver;
+  - 8 testes automatizados consolidados;
+  - persistência end-to-end no HAPI FHIR.
+
 ---
 
 ## 4. Evidências
@@ -71,7 +81,7 @@ A documentação é dividida entre a base de estudos já concluída em Google Cl
 - [MVP v0.1 — Validação do Ambiente FHIR Local](evidence/mvp-v0.1-local-fhir-validation.md)
 - [MVP v0.1 — Validação do HIS Simulator / ADT^A01](evidence/mvp-v0.1-his-simulator-validation.md)
 - [MVP v0.1 — Validação MLLP + ACK/NACK](evidence/mvp-v0.1-mllp-ack-validation.md)
-- [MVP v0.1 — Validação HL7 Parser + Validator Core](evidence/mvp-v0.1-hl7-parser-validator-validation.md)
+- [MVP v0.1 — Validação HL7 Parser + Validator Core](evidence/mvp-v0.1-hl7-parser-validator-validation.md)\n- [MVP v0.1 — Validação end-to-end ADT^A01 → FHIR](evidence/mvp-v0.1-adt-a01-fhir-e2e-validation.md)
 
 Os documentos registram comandos, resultados esperados, resultados observados, interpretação técnica, testes positivos e negativos e troubleshooting.
 
@@ -82,7 +92,7 @@ Os documentos registram comandos, resultados esperados, resultados observados, i
 - [Milestone 1.1 — Ambiente FHIR Local](reports/01-milestone-1.1-summary.md)
 - [Milestone 1.2 — HIS Simulator + HL7v2 ADT^A01](reports/02-milestone-1.2-summary.md)
 - [Milestone 1.3 — Transporte MLLP + ACK/NACK](reports/03-milestone-1.3-summary.md)
-- [Milestone 1.4 — HL7 Parser + Validator Core](reports/04-milestone-1.4-summary.md)
+- [Milestone 1.4 — HL7 Parser + Validator Core](reports/04-milestone-1.4-summary.md)\n- [Milestone 1.5 — ADT^A01 → FHIR Patient + Encounter](reports/05-milestone-1.5-summary.md)
 
 ---
 
