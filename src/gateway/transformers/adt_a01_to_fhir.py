@@ -225,9 +225,10 @@ def transform_adt_a01(
     """
     Transforma ADT^A01 validado em recursos FHIR R4.
 
-    Neste estágio, Patient e Encounter são gerados
-    separadamente. A persistência e resolução da referência
-    real do Patient serão implementadas posteriormente.
+    Gera Patient e Encounter em memória para testes e uso
+    isolado do transformer. No fluxo end-to-end, o service
+    persiste o Patient primeiro e reconstrói o Encounter com
+    a referência FHIR real do Patient.
     """
     patient = build_patient(message)
 
