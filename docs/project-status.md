@@ -8,7 +8,7 @@ O projeto está na fase **MVP v0.1**.
 - **Milestone 1.2 — HIS Simulator + HL7v2 ADT^A01:** ✅ concluído e validado.
 - **Milestone 1.3 — Transporte MLLP + ACK/NACK:** ✅ concluído e validado.
 - **Milestone 1.4 — HL7 Parser + Validator Core desacoplados:** ✅ concluído e validado.
-- **Milestone 1.5 — ADT^A01 → FHIR Patient + Encounter:** 🔜 próximo passo.
+- **Milestone 1.5 — ADT^A01 → FHIR Patient + Encounter:** ✅ concluído e validado.\n- **Milestone 1.6 — End-to-end hardening e confiabilidade:** 🔜 próximo passo.
 
 ---
 
@@ -288,57 +288,79 @@ Validator Core
 ACK via MLLP
 ```
 
+
+---
+
+## Milestone 1.5 — ADT^A01 → FHIR Patient + Encounter
+
+### Objetivo
+
+Transformar o conteúdo do `ADT^A01` em recursos FHIR R4, persistir `Patient` e `Encounter` no HAPI FHIR e conectar o fluxo MLLP ao destino FHIR.
+
+### Implementado
+
+- `src/gateway/transformers/adt_a01_to_fhir.py`;
+- mapping `PID → Patient`;
+- mapping `PV1 → Encounter`;
+- rastreabilidade por `MSH-10` em `meta.source`;
+- `src/gateway/clients/fhir_client.py`;
+- criação de resources via REST FHIR;
+- captura do ID retornado pelo servidor;
+- `src/gateway/services/adt_a01_service.py`;
+- vínculo real `Encounter.subject.reference = Patient/{id}`;
+- integração do service ao MLLP Receiver;
+- ACK `AA` após persistência bem-sucedida;
+- ACK `AE` preparado para falhas no processamento/persistência;
+- 8 testes automatizados consolidados.
+
+### Validação end-to-end
+
+```text
+HIS Simulator
+-> MLLP Receiver
+-> HL7 Parser
+-> Validator Core
+-> ADT^A01 to FHIR Transformer
+-> FHIR Client
+-> HAPI FHIR
+-> PostgreSQL
+-> ACK AA
+```
+
+Execução validada:
+
+```text
+Patient/1057
+Encounter/1058
+Encounter.subject.reference = Patient/1057
+ACK TYPE: AA
+ACK VALIDATION RESULT: PASS
+```
+
+Os IDs acima representam uma execução local específica e servem apenas como evidência técnica.
+
+### Testes
+
+```text
+Ran 8 tests in 0.004s
+OK
+```
+
 ---
 
 ## Próximo milestone
 
-### Milestone 1.5 — ADT^A01 → FHIR Patient + Encounter
+### Milestone 1.6 — End-to-end hardening e confiabilidade
 
-Objetivos:
+Prioridades:
 
-1. mapear dados de `PID` para `Patient`;
-2. mapear dados de `PV1` para `Encounter`;
-3. produzir resources FHIR R4 válidos;
-4. manter rastreabilidade entre mensagem de origem e resources gerados;
-5. preparar envio ao HAPI FHIR;
-6. criar testes automatizados para transformação.
+1. idempotência e prevenção de duplicidade;
+2. testes automatizados do FHIR Client e do service;
+3. comportamento controlado com FHIR Server indisponível;
+4. logs e auditoria estruturados;
+5. tratamento de erros/retry;
+6. maior rigor na validação FHIR;
+7. melhoria da semântica temporal;
+8. preparação para expansão do gateway.
 
-Fluxo alvo:
-
-```text
-HL7 Parser
-      |
-      v
-Validator Core
-      |
-      v
-ADT^A01 -> FHIR Transformer
-      |
-      +--> Patient
-      +--> Encounter
-      |
-      v
-HAPI FHIR R4
-```
-
----
-
-## Evolução prevista
-
-```text
-LAB
- |
- v
-PoC
- |
- v
-MVP
- |
- v
-Piloto
- |
- v
-Produto
-```
-
-O foco permanece em construir uma solução tecnicamente sólida, explicável, reproduzível e progressivamente aplicável a cenários reais de Healthcare IT.
+O fluxo funcional principal do MVP já está conectado ponta a ponta. O próximo milestone deixa de ser integração básica e passa a focar confiabilidade operacional.
