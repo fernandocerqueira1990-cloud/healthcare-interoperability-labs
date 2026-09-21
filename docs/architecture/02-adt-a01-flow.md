@@ -2,135 +2,20 @@
 
 ## 1. Objetivo
 
-Este documento descreve o primeiro fluxo funcional do Healthcare Integration Gateway.
+Este documento descreve o primeiro fluxo funcional validado do Healthcare Integration Gateway: uma admissão hospitalar representada por `ADT^A01`, recebida via MLLP e convertida em `Patient` e `Encounter` FHIR R4.
 
-O caso de uso escolhido é uma **admissão de paciente**, representada em HL7v2 pelo evento `ADT^A01`.
-
-O objetivo é demonstrar, de ponta a ponta, como um evento gerado por um sistema hospitalar pode ser recebido, interpretado, validado e convertido em recursos FHIR.
-
----
-
-## 2. Cenário de negócio
-
-Um paciente é admitido em um hospital.
-
-O HIS registra essa admissão e gera uma mensagem HL7v2 `ADT^A01`.
-
-A mensagem contém dados administrativos do paciente e do atendimento.
-
-Exemplo conceitual:
+## 2. Mensagem sintética usada
 
 ```text
-Paciente admitido
-      |
-      v
-HIS gera ADT^A01
-      |
-      v
-Gateway recebe e processa
-      |
-      v
-FHIR Patient + Encounter
+MSH|^~\&|HIS_DEMO|HOSPITAL_DEMO|INTEGRATION_GATEWAY|HEALTHCARE_LAB|20260914231500||ADT^A01|MSG00001|P|2.5
+EVN|A01|20260914231500
+PID|1||789012^^^HOSPITAL_DEMO^MR||SANTOS^MARINA||19920810|F|||AVENIDA DEMO 100^^SALVADOR^BA^40000000^BRA||71999999999
+PV1|1|I|WARD^101^A||||12345^SILVA^CARLOS||||||||||||VN00001|||||||||||||||||||||||||20260914231500
 ```
 
----
+Todos os dados são fictícios.
 
-## 3. Por que ADT^A01?
-
-Eventos ADT são fundamentais em integrações hospitalares porque representam mudanças no ciclo administrativo do paciente.
-
-O evento `A01` representa uma admissão/entrada.
-
-Ele é adequado para o primeiro MVP porque envolve conceitos centrais:
-
-- identificação do paciente;
-- dados demográficos;
-- atendimento;
-- internação;
-- unidade/leito;
-- profissional associado;
-- data/hora do evento.
-
-Além disso, permite estudar um mapeamento natural entre HL7v2 e FHIR.
-
----
-
-## 4. Mensagem de exemplo
-
-Todos os dados abaixo são fictícios.
-
-```text
-MSH|^~\&|HIS_DEMO|HOSPITAL_DEMO|INTEROP_GATEWAY|LAB|20260910220000||ADT^A01|MSG000001|P|2.5
-EVN|A01|20260910220000
-PID|1||123456^^^HOSPITAL_DEMO^MR||SILVA^JOAO||19850315|M|||RUA DEMO 100^^SALVADOR^BA^40000000^BRA
-PV1|1|I|UTI^101^01||||1234^SOUZA^MARIA|||||||||||ENC000001
-```
-
----
-
-## 5. Segmentos utilizados inicialmente
-
-### MSH — Message Header
-
-Cabeçalho da mensagem.
-
-Informações importantes para o gateway:
-
-- sistema emissor;
-- instalação emissora;
-- sistema receptor;
-- data/hora;
-- tipo de mensagem;
-- identificador da mensagem;
-- versão do HL7.
-
-Campos relevantes no MVP:
-
-```text
-MSH-3  Sending Application
-MSH-4  Sending Facility
-MSH-7  Date/Time of Message
-MSH-9  Message Type
-MSH-10 Message Control ID
-MSH-12 Version ID
-```
-
-### EVN — Event Type
-
-Representa informações relacionadas ao evento administrativo.
-
-No fluxo inicial utilizaremos principalmente o tipo e o timestamp do evento.
-
-### PID — Patient Identification
-
-Contém informações demográficas e de identificação do paciente.
-
-Campos iniciais:
-
-```text
-PID-3 Patient Identifier List
-PID-5 Patient Name
-PID-7 Date/Time of Birth
-PID-8 Administrative Sex
-PID-11 Patient Address
-```
-
-### PV1 — Patient Visit
-
-Representa informações relacionadas ao atendimento/visita/internação.
-
-Campos iniciais previstos:
-
-```text
-PV1-2  Patient Class
-PV1-3  Assigned Patient Location
-PV1-7  Attending Doctor
-PV1-19 Visit Number
-```
-
----
-
-## 6. Mapeamento conceitual HL7v2 -> FHIR
+## 3. Mapping implementado
 
 ### Patient
 
@@ -140,6 +25,8 @@ PID-5  -> Patient.name
 PID-7  -> Patient.birthDate
 PID-8  -> Patient.gender
 PID-11 -> Patient.address
+PID-13 -> Patient.telecom
+MSH-10 -> Patient.meta.source
 ```
 
 ### Encounter
@@ -148,204 +35,136 @@ PID-11 -> Patient.address
 PV1-19 -> Encounter.identifier
 PV1-2  -> Encounter.class
 PV1-3  -> Encounter.location
-PV1-7  -> Encounter.participant
-PID-3  -> Encounter.subject -> Patient
+PV1-44 -> Encounter.period.start
+Patient FHIR id -> Encounter.subject.reference
+MSH-10 -> Encounter.meta.source
 ```
 
-O mapeamento real será implementado progressivamente e poderá exigir normalização de códigos e regras específicas.
-
----
-
-## 7. Pipeline de processamento
+## 4. Fluxo end-to-end
 
 ```mermaid
 sequenceDiagram
     participant HIS as HIS Simulator
     participant MLLP as MLLP Receiver
     participant Parser as HL7 Parser
-    participant Validator as Validator
-    participant Mapper as Transformer
-    participant Router as Router
+    participant Validator as Validator Core
+    participant Mapper as FHIR Transformer
+    participant Service as ADT A01 Service
+    participant Client as FHIR Client
     participant FHIR as HAPI FHIR
+    participant DB as PostgreSQL
 
-    HIS->>MLLP: ADT^A01
-    MLLP->>Parser: HL7 payload
-    Parser->>Validator: Structured message
-    Validator->>Mapper: Validated message
-    Mapper->>Router: Patient + Encounter
-    Router->>FHIR: POST Patient
-    FHIR-->>Router: Patient created
-    Router->>FHIR: POST Encounter
-    FHIR-->>Router: Encounter created
-    Router-->>MLLP: Processing result
-    MLLP-->>HIS: ACK
+    HIS->>MLLP: ADT^A01 / MLLP
+    MLLP->>Parser: raw HL7
+    Parser->>Validator: ParsedHL7Message
+    Validator->>Mapper: validated message
+    Mapper->>Service: Patient
+    Service->>Client: create Patient
+    Client->>FHIR: POST /Patient
+    FHIR->>DB: persist
+    FHIR-->>Client: 201 + Patient id
+    Service->>Mapper: build Encounter(Patient/id)
+    Mapper-->>Service: Encounter
+    Service->>Client: create Encounter
+    Client->>FHIR: POST /Encounter
+    FHIR->>DB: persist
+    FHIR-->>Client: 201 + Encounter id
+    Service-->>MLLP: processing success
+    MLLP-->>HIS: ACK AA
 ```
 
----
+## 5. Semântica temporal
 
-## 8. Estado esperado em cada etapa
-
-### 8.1 Recebimento
-
-Entrada:
+O valor HL7 do exemplo:
 
 ```text
-HL7v2 raw message
+PV1-44 = 20260914231500
 ```
 
-Saída:
+não possui timezone explícito.
+
+Nesta fase, o projeto deliberadamente não inventa offset temporal. O mapping utiliza:
 
 ```text
-payload extraído do framing MLLP
+Encounter.period.start = 2026-09-14
 ```
 
-### 8.2 Parsing
+A decisão preserva apenas informação que existe de forma segura na origem.
 
-Entrada:
+## 6. Referência Patient → Encounter
+
+O fluxo inicialmente foi testado com uma referência temporária. Depois da validação do POST de Patient, o service passou a capturar o ID real retornado pelo HAPI FHIR.
+
+Execução validada:
 
 ```text
-texto HL7v2
+Patient/1057
+Encounter/1058
+Encounter.subject.reference = Patient/1057
 ```
 
-Saída conceitual:
+Os números são IDs de uma execução local e não identificadores fixos do projeto.
+
+## 7. ACK
+
+O ACK passa a refletir o resultado do processamento do gateway.
+
+Sucesso:
 
 ```text
-MSH
-EVN
-PID
-PV1
+MSA|AA|MSG00001|Message accepted
 ```
 
-com campos acessíveis pela aplicação.
-
-### 8.3 Validação
-
-Exemplos mínimos iniciais:
-
-- MSH existe;
-- `MSH-9` é ADT^A01;
-- `MSH-10` existe;
-- PID existe;
-- `PID-3` existe;
-- PV1 existe.
-
-### 8.4 Transformação
-
-Produção de dois recursos FHIR principais:
+Falha de validação ou persistência:
 
 ```text
-Patient
-Encounter
+AE
 ```
 
-### 8.5 Entrega
-
-Recursos enviados ao HAPI FHIR através de sua API REST.
-
-### 8.6 Confirmação
-
-O gateway gera uma resposta HL7 ACK indicando o resultado do processamento.
-
----
-
-## 9. ACK e tratamento de resultado
-
-O emissor precisa saber se a mensagem foi aceita.
-
-No fluxo inicial trabalharemos com os conceitos:
+Tipo de mensagem não suportado:
 
 ```text
-AA = Application Accept
-AE = Application Error
-AR = Application Reject
+AR
 ```
 
-A política exata será implementada e documentada junto ao receiver.
+## 8. Rastreabilidade
 
-Exemplo conceitual de sucesso:
+O `MSH-10` é preservado como correlation id e também incorporado em:
 
 ```text
-MSA|AA|MSG000001
+Patient.meta.source
+Encounter.meta.source
 ```
 
-O `Message Control ID` permite correlacionar o ACK com a mensagem original.
-
----
-
-## 10. Rastreabilidade mínima
-
-Cada execução deverá permitir correlacionar a mensagem desde a origem até o destino.
-
-Campos iniciais desejados:
+Exemplo:
 
 ```text
-message_id: MSG000001
-message_type: ADT^A01
-client_id: hospital_demo
-status: processed
-received_at: ...
-processed_at: ...
-patient_identifier: 123456
-destination: hapi_fhir
-fhir_patient_id: ...
-fhir_encounter_id: ...
-ack_code: AA
+urn:hl7v2:message:MSG00001
 ```
 
-Não utilizaremos identificadores reais de pacientes nos exemplos públicos.
+## 9. Critério de aceite
 
----
+O fluxo foi considerado validado porque:
 
-## 11. Cenários de erro que serão testados
+- o HIS Simulator enviou a mensagem sintética;
+- a mensagem foi recebida por MLLP;
+- Parser e Validator executaram;
+- `Patient` foi criado;
+- o ID FHIR real foi capturado;
+- `Encounter` foi criado referenciando o Patient;
+- ambos puderam ser recuperados pela API FHIR;
+- PostgreSQL permaneceu saudável;
+- o emissor recebeu `ACK AA`;
+- 8 testes automatizados permaneceram passando.
 
-O pipeline não será validado apenas pelo caminho feliz.
+## 10. Próxima evolução
 
-Casos previstos:
+O próximo trabalho não é mais conectar o caminho feliz, e sim endurecê-lo:
 
-1. mensagem sem MSH;
-2. mensagem com tipo não suportado;
-3. ausência de `MSH-10`;
-4. ausência de PID;
-5. ausência de `PID-3`;
-6. ausência de PV1;
-7. FHIR Server indisponível;
-8. resposta HTTP inesperada;
-9. timeout;
-10. reenvio da mesma mensagem.
-
-Cada falha relevante deverá gerar evidência e documentação de troubleshooting.
-
----
-
-## 12. Critério de aceite do fluxo
-
-O fluxo ADT^A01 será considerado validado quando:
-
-- uma mensagem sintética for enviada pelo simulador;
-- for recebida via MLLP;
-- o tipo ADT^A01 for identificado;
-- os campos mínimos forem validados;
-- Patient for criado no HAPI FHIR;
-- Encounter for criado e relacionado ao Patient;
-- os recursos puderem ser consultados posteriormente;
-- um ACK coerente retornar ao emissor;
-- logs permitirem acompanhar todo o processamento;
-- os testes puderem ser repetidos de forma documentada.
-
----
-
-## 13. Próxima etapa técnica
-
-Antes de implementar o MLLP Receiver, será montado o ambiente local mínimo:
-
-```text
-Docker
-  |
-  +-- PostgreSQL
-  |
-  +-- HAPI FHIR R4
-```
-
-O objetivo é validar primeiro o destino da integração e a API FHIR.
-
-Isso será documentado em `docs/implementation/01-local-fhir-environment.md`.
+- idempotência;
+- duplicate control;
+- testes do FHIR Client e service;
+- indisponibilidade do destino;
+- retry;
+- logs/auditoria estruturados;
+- validação adicional de semântica e qualidade de dados.
