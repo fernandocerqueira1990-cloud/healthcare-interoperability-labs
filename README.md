@@ -146,7 +146,9 @@ flowchart LR
 | Validator Core desacoplado | ✅ Implementado |
 | HL7 → FHIR Transformer | ✅ Implementado |
 | ADT^A01 Service / orquestração | ✅ Implementado |
-| FHIR Client / persistência REST | ✅ Implementado |\n| Idempotência / controle de duplicidade | 🔜 Próximo |\n| Audit / Logs estruturados | 🔜 Próximo |
+| FHIR Client / persistência REST | ✅ Implementado |
+| Idempotência / controle de duplicidade | 🔜 Próximo |
+| Audit / Logs estruturados | 🔜 Próximo |
 
 ### Fluxo implementado atualmente
 
@@ -209,7 +211,10 @@ HL7 -> FHIR Transformer
       |
       | Patient + Encounter
       v
-Router
+ADT A01 Service
+      |
+      v
+FHIR Client
       |
       | REST FHIR
       v
@@ -267,21 +272,24 @@ A regra do projeto é:
 - [01 — Ambiente FHIR local](docs/implementation/01-local-fhir-environment.md)
 - [02 — HIS Simulator + HL7v2 ADT^A01](docs/implementation/02-his-simulator-adt-a01.md)
 - [03 — Transporte MLLP + ACK/NACK](docs/implementation/03-mllp-transport-ack-nack.md)
-- [04 — HL7 Parser + Validator Core](docs/implementation/04-hl7-parser-validator-core.md)\n- [05 — ADT^A01 → FHIR Patient + Encounter](docs/implementation/05-adt-a01-fhir-patient-encounter.md)
+- [04 — HL7 Parser + Validator Core](docs/implementation/04-hl7-parser-validator-core.md)
+- [05 — ADT^A01 → FHIR Patient + Encounter](docs/implementation/05-adt-a01-fhir-patient-encounter.md)
 
 ### Evidências
 
 - [Validação do ambiente FHIR local](docs/evidence/mvp-v0.1-local-fhir-validation.md)
 - [Validação do HIS Simulator / ADT^A01](docs/evidence/mvp-v0.1-his-simulator-validation.md)
 - [Validação MLLP + ACK/NACK](docs/evidence/mvp-v0.1-mllp-ack-validation.md)
-- [Validação do HL7 Parser + Validator Core](docs/evidence/mvp-v0.1-hl7-parser-validator-validation.md)\n- [Validação end-to-end ADT^A01 → FHIR](docs/evidence/mvp-v0.1-adt-a01-fhir-e2e-validation.md)
+- [Validação do HL7 Parser + Validator Core](docs/evidence/mvp-v0.1-hl7-parser-validator-validation.md)
+- [Validação end-to-end ADT^A01 → FHIR](docs/evidence/mvp-v0.1-adt-a01-fhir-e2e-validation.md)
 
 ### Relatórios
 
 - [Milestone 1.1](docs/reports/01-milestone-1.1-summary.md)
 - [Milestone 1.2](docs/reports/02-milestone-1.2-summary.md)
 - [Milestone 1.3](docs/reports/03-milestone-1.3-summary.md)
-- [Milestone 1.4](docs/reports/04-milestone-1.4-summary.md)\n- [Milestone 1.5](docs/reports/05-milestone-1.5-summary.md)
+- [Milestone 1.4](docs/reports/04-milestone-1.4-summary.md)
+- [Milestone 1.5](docs/reports/05-milestone-1.5-summary.md)
 
 ### Guia de estudo
 
@@ -405,16 +413,21 @@ healthcare-interoperability-labs/
 │   ├── implementation/
 │   │   ├── 01-local-fhir-environment.md
 │   │   ├── 02-his-simulator-adt-a01.md
-│   │   └── 03-mllp-transport-ack-nack.md
+│   │   ├── 03-mllp-transport-ack-nack.md
+│   │   ├── 04-hl7-parser-validator-core.md
+│   │   └── 05-adt-a01-fhir-patient-encounter.md
 │   ├── evidence/
 │   │   ├── mvp-v0.1-local-fhir-validation.md
 │   │   ├── mvp-v0.1-his-simulator-validation.md
-│   │   └── mvp-v0.1-mllp-ack-validation.md
+│   │   ├── mvp-v0.1-mllp-ack-validation.md
+│   │   ├── mvp-v0.1-hl7-parser-validator-validation.md
+│   │   └── mvp-v0.1-adt-a01-fhir-e2e-validation.md
 │   └── reports/
 │       ├── 01-milestone-1.1-summary.md
 │       ├── 02-milestone-1.2-summary.md
 │       ├── 03-milestone-1.3-summary.md
-│       └── 04-milestone-1.4-summary.md
+│       ├── 04-milestone-1.4-summary.md
+│       └── 05-milestone-1.5-summary.md
 ├── tests/
 │   └── gateway/
 │       ├── test_hl7_core.py
