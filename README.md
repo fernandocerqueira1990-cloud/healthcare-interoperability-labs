@@ -13,7 +13,7 @@ Este repositório reúne duas frentes complementares:
 
 ## Status atual
 
-**MVP v0.1 — Milestones 1.1, 1.2, 1.3 e 1.4 concluídos e validados**
+**MVP v0.1 — Milestones 1.1 a 1.5 concluídos e validados**
 
 ### ✅ Milestone 1.1 — Ambiente FHIR Local
 
@@ -65,14 +65,22 @@ Este repositório reúne duas frentes complementares:
 - 6 testes automatizados de regressão;
 - testes ponta a ponta MLLP preservados sem regressão.
 
-### 🔜 Próximo: Milestone 1.5 — ADT^A01 → FHIR Patient + Encounter
+### ✅ Milestone 1.5 — ADT^A01 → FHIR Patient + Encounter
 
-Objetivos:
+- transformer HL7v2 → FHIR R4;
+- mapping `PID → Patient`;
+- mapping `PV1 → Encounter`;
+- FHIR Client para persistência via REST;
+- captura do ID real do `Patient`;
+- `Encounter.subject.reference` apontando para o Patient persistido;
+- integração do service ao MLLP Receiver;
+- 8 testes automatizados passando;
+- fluxo end-to-end validado com `ACK AA`;
+- `Patient/1057` e `Encounter/1058` usados como evidência de uma execução local validada.
 
-- mapear `PID` para `Patient`;
-- mapear `PV1` para `Encounter`;
-- manter rastreabilidade entre mensagem HL7 e resources FHIR;
-- validar payloads FHIR R4 antes do envio ao HAPI FHIR.
+### 🔜 Próximo: Milestone 1.6 — End-to-end hardening
+
+Foco em idempotência, duplicidade, testes do service/FHIR Client, falhas de destino, auditoria estruturada e maior robustez operacional.
 
 ---
 
@@ -99,28 +107,28 @@ flowchart LR
         G -->|JDBC| H
     end
 
-    subgraph PROXIMO[Milestone 1.4]
-        P[HL7 Parser]
-        V[Validator Core]
-        D -.-> P
-        P -.-> V
+    P[HL7 Parser]
+    V[Validator Core]
+    T[ADT A01 to FHIR Transformer]
+    S[ADT A01 Service]
+    F[FHIR Client]
+
+    D --> P
+    P --> V
+    V --> T
+    T --> S
+    S --> F
+    F -->|REST FHIR| G
+
+    subgraph PROXIMO[Milestone 1.6]
+        I[Idempotency / Duplicate Control]
+        L[Structured Audit / Logs]
+        X[Failure and Retry Handling]
     end
 
-    subgraph PLANEJADO[Pipeline planejado]
-        T[HL7 to FHIR Transformer]
-        R[Router]
-        L[Audit / Logs estruturados]
-
-        V -.-> T
-        T -.-> R
-        R -.->|REST FHIR| G
-
-        D -.-> L
-        P -.-> L
-        V -.-> L
-        T -.-> L
-        R -.-> L
-    end
+    F -.-> I
+    S -.-> L
+    F -.-> X
 ```
 
 ### Legenda de status
@@ -136,28 +144,36 @@ flowchart LR
 | PostgreSQL / persistência | ✅ Implementado |
 | HL7 Parser desacoplado | ✅ Implementado |
 | Validator Core desacoplado | ✅ Implementado |
-| HL7 → FHIR Transformer | ⏳ Planejado |
-| Router | ⏳ Planejado |
-| Audit / Logs estruturados | ⏳ Planejado |
+| HL7 → FHIR Transformer | ✅ Implementado |
+| ADT^A01 Service / orquestração | ✅ Implementado |
+| FHIR Client / persistência REST | ✅ Implementado |\n| Idempotência / controle de duplicidade | 🔜 Próximo |\n| Audit / Logs estruturados | 🔜 Próximo |
 
 ### Fluxo implementado atualmente
 
 ```text
 HIS Simulator
       |
-      | HL7v2 / TCP / MLLP
+      | HL7v2 ADT^A01 / TCP / MLLP
       v
 MLLP Receiver
       |
-      +--> MSH metadata
-      +--> AA / AE / AR
+      v
+HL7 Parser
       |
       v
-ACK via MLLP
+Validator Core
       |
       v
-HIS Simulator
-
+ADT^A01 -> FHIR Transformer
+      |
+      v
+ADT A01 Service
+      |
+      v
+FHIR Client
+      |
+      | REST FHIR
+      v
 HAPI FHIR R4
       |
       | JDBC
@@ -165,10 +181,13 @@ HAPI FHIR R4
 PostgreSQL
       |
       v
-Docker Volume
+ACK AA / AE / AR
+      |
+      v
+HIS Simulator
 ```
 
-> O fluxo MLLP e o bloco FHIR ainda não estão conectados ponta a ponta. Essa conexão será construída progressivamente nos próximos milestones.
+> O fluxo `ADT^A01 → Patient + Encounter` está conectado ponta a ponta e foi validado com persistência real no HAPI FHIR e relacionamento entre os resources.
 
 ### Arquitetura alvo do MVP v0.1
 
@@ -214,8 +233,8 @@ Todos os componentes críticos
 | MVP v0.1 / 1.2 | HIS Simulator + HL7v2 ADT^A01 | ✅ Concluído |
 | MVP v0.1 / 1.3 | Transporte MLLP + ACK/NACK | ✅ Concluído |
 | MVP v0.1 / 1.4 | Parser + Validator HL7v2 | ✅ Concluído |
-| MVP v0.1 / 1.5 | ADT^A01 → FHIR Patient + Encounter | Planejado |
-| MVP v0.1 / 1.6 | Pipeline end-to-end | Planejado |
+| MVP v0.1 / 1.5 | ADT^A01 → FHIR Patient + Encounter | ✅ Concluído |
+| MVP v0.1 / 1.6 | End-to-end hardening, idempotência e auditoria | 🔜 Próximo |
 | v0.2 | ORM / ORU → ServiceRequest / Observation / DiagnosticReport | Planejado |
 | v0.3 | REST API Gateway e webhooks | Planejado |
 | v0.4 | Dashboard operacional | Planejado |
@@ -248,21 +267,21 @@ A regra do projeto é:
 - [01 — Ambiente FHIR local](docs/implementation/01-local-fhir-environment.md)
 - [02 — HIS Simulator + HL7v2 ADT^A01](docs/implementation/02-his-simulator-adt-a01.md)
 - [03 — Transporte MLLP + ACK/NACK](docs/implementation/03-mllp-transport-ack-nack.md)
-- [04 — HL7 Parser + Validator Core](docs/implementation/04-hl7-parser-validator-core.md)
+- [04 — HL7 Parser + Validator Core](docs/implementation/04-hl7-parser-validator-core.md)\n- [05 — ADT^A01 → FHIR Patient + Encounter](docs/implementation/05-adt-a01-fhir-patient-encounter.md)
 
 ### Evidências
 
 - [Validação do ambiente FHIR local](docs/evidence/mvp-v0.1-local-fhir-validation.md)
 - [Validação do HIS Simulator / ADT^A01](docs/evidence/mvp-v0.1-his-simulator-validation.md)
 - [Validação MLLP + ACK/NACK](docs/evidence/mvp-v0.1-mllp-ack-validation.md)
-- [Validação do HL7 Parser + Validator Core](docs/evidence/mvp-v0.1-hl7-parser-validator-validation.md)
+- [Validação do HL7 Parser + Validator Core](docs/evidence/mvp-v0.1-hl7-parser-validator-validation.md)\n- [Validação end-to-end ADT^A01 → FHIR](docs/evidence/mvp-v0.1-adt-a01-fhir-e2e-validation.md)
 
 ### Relatórios
 
 - [Milestone 1.1](docs/reports/01-milestone-1.1-summary.md)
 - [Milestone 1.2](docs/reports/02-milestone-1.2-summary.md)
 - [Milestone 1.3](docs/reports/03-milestone-1.3-summary.md)
-- [Milestone 1.4](docs/reports/04-milestone-1.4-summary.md)
+- [Milestone 1.4](docs/reports/04-milestone-1.4-summary.md)\n- [Milestone 1.5](docs/reports/05-milestone-1.5-summary.md)
 
 ### Guia de estudo
 
@@ -358,6 +377,12 @@ healthcare-interoperability-labs/
 │   │   │   ├── __init__.py
 │   │   │   ├── hl7_parser.py
 │   │   │   └── hl7_validator.py
+│   │   ├── transformers/
+│   │   │   └── adt_a01_to_fhir.py
+│   │   ├── clients/
+│   │   │   └── fhir_client.py
+│   │   ├── services/
+│   │   │   └── adt_a01_service.py
 │   │   └── receivers/
 │   │       └── mllp_receiver.py
 │   └── his-simulator/
@@ -392,7 +417,8 @@ healthcare-interoperability-labs/
 │       └── 04-milestone-1.4-summary.md
 ├── tests/
 │   └── gateway/
-│       └── test_hl7_core.py
+│       ├── test_hl7_core.py
+│       └── test_adt_a01_to_fhir.py
 └── assets/
     └── README.md
 ```
