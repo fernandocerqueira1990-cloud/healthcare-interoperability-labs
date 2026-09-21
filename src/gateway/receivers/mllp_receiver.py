@@ -5,7 +5,11 @@ from datetime import datetime
 
 from src.gateway.core.hl7_parser import parse_message
 from src.gateway.core.hl7_validator import validate_message
-
+from src.gateway.clients.fhir_client import FHIRClient
+from src.gateway.services.adt_a01_service import (
+    ADTA01ProcessingError,
+    process_adt_a01,
+)
 
 HOST = os.getenv("MLLP_HOST", "127.0.0.1")
 PORT = int(os.getenv("MLLP_PORT", "2575"))
@@ -22,6 +26,14 @@ logging.basicConfig(
 
 logger = logging.getLogger("mllp-receiver")
 
+FHIR_BASE_URL = os.getenv(
+    "FHIR_BASE_URL",
+    "http://localhost:8080/fhir",
+)
+
+fhir_client = FHIRClient(
+    base_url=FHIR_BASE_URL,
+)
 
 def frame_mllp(message: str) -> bytes:
     return (
@@ -113,8 +125,6 @@ def build_ack(
     msa = separator.join(msa_fields)
 
     return f"{ack_msh}\r{msa}\r"
-
-
 def handle_message(message: str):
     parsed = parse_message(message)
 
@@ -133,19 +143,73 @@ def handle_message(message: str):
                 error,
             )
 
+    if not validation.valid:
+        ack = build_ack(
+            parsed_message=parsed,
+            acknowledgement_code=validation.ack_code,
+            acknowledgement_text=validation.reason,
+        )
+
+        logger.info(
+            "ACK generated | code=%s | correlation_id=%s",
+            validation.ack_code,
+            parsed.message_control_id or "<missing>",
+        )
+
+        return ack
+
+    try:
+        result = process_adt_a01(
+            message,
+            fhir_client,
+        )
+
+        logger.info(
+            (
+                "FHIR persistence completed | "
+                "patient_id=%s | encounter_id=%s | "
+                "correlation_id=%s"
+            ),
+            result.patient_id,
+            result.encounter_id,
+            parsed.message_control_id,
+        )
+
+        ack_code = "AA"
+        ack_text = "Message accepted"
+
+    except ADTA01ProcessingError as exc:
+        logger.exception(
+            "ADT processing failed | %s",
+            exc,
+        )
+
+        ack_code = "AE"
+        ack_text = "ADT processing failed"
+
+    except Exception as exc:
+        logger.exception(
+            "FHIR persistence failed | %s",
+            exc,
+        )
+
+        ack_code = "AE"
+        ack_text = "FHIR persistence failed"
+
     ack = build_ack(
         parsed_message=parsed,
-        acknowledgement_code=validation.ack_code,
-        acknowledgement_text=validation.reason,
+        acknowledgement_code=ack_code,
+        acknowledgement_text=ack_text,
     )
 
     logger.info(
         "ACK generated | code=%s | correlation_id=%s",
-        validation.ack_code,
+        ack_code,
         parsed.message_control_id or "<missing>",
     )
 
     return ack
+
 
 def run_server():
     logger.info(
